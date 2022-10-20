@@ -1,0 +1,160 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2022-10-20T16:54:11.285Z",
+  "__export_source": "insomnia.desktop.app:v2022.6.0",
+  "resources": [
+    {
+      "_id": "req_fe2c036d63f74dce86d54ce342ee0bf7",
+      "parentId": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "modified": 1666279577439,
+      "created": 1666277885354,
+      "url": "http://localhost:3001/savepup",
+      "name": "savepup",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "id": "pair_9f218866ef70494f9e1af26ee6532f32",
+            "name": "file",
+            "value": "",
+            "description": "",
+            "type": "file",
+            "fileName": "C:\\Users\\Marph\\Downloads\\pup_blog_marand_dk.js"
+          }
+        ]
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "multipart/form-data"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1666277885354,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "parentId": null,
+      "modified": 1666277444990,
+      "created": 1666277444990,
+      "name": "New Document",
+      "description": "",
+      "scope": "design",
+      "_type": "workspace"
+    },
+    {
+      "_id": "req_b7dff796b56d409ebe4c70a99dfe8204",
+      "parentId": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "modified": 1666284783294,
+      "created": 1666277445038,
+      "url": "http://localhost:3001/testpost",
+      "name": "testpost",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"test\":\"test\"}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1666277445038,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_58dfe3d7b6d04878998047dcd92ffb37",
+      "parentId": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "modified": 1666284827290,
+      "created": 1666279822141,
+      "url": "http://localhost:3001/runscript",
+      "name": "runscript",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\"test\":\"test\"}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1666277444988,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "env_1477520dc1919e247f351a5dd1199a236375c200",
+      "parentId": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "modified": 1666277445024,
+      "created": 1666277445024,
+      "name": "Base Environment",
+      "data": {},
+      "dataPropertyOrder": null,
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1666277445024,
+      "_type": "environment"
+    },
+    {
+      "_id": "jar_1477520dc1919e247f351a5dd1199a236375c200",
+      "parentId": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "modified": 1666277445030,
+      "created": 1666277445030,
+      "name": "Default Jar",
+      "cookies": [],
+      "_type": "cookie_jar"
+    },
+    {
+      "_id": "spc_27377bd70fb845dcaf4d45cc5a2afcf5",
+      "parentId": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "modified": 1666284819249,
+      "created": 1666277445015,
+      "fileName": "pupwrapper",
+      "contents": "",
+      "contentType": "yaml",
+      "_type": "api_spec"
+    },
+    {
+      "_id": "uts_c48cc484bb5a456cb50bff483a66749e",
+      "parentId": "wrk_8f92c9a479624dfd8d38c00136d7ec9a",
+      "modified": 1666277445041,
+      "created": 1666277445041,
+      "name": "Example Test Suite",
+      "_type": "unit_test_suite"
+    }
+  ]
+}
