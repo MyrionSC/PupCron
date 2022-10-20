@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const _ = require('lodash');
+const {runScript} = require("./helper");
 
 const app = express();
 
@@ -25,9 +26,16 @@ app.post('/testpost', async (req, res) => {
     console.log(req.body);
     res.send(req.body)
 })
-app.post('/savefile', async (req, res) => {
+app.post('/runscript', async (req, res) => {
+    runScript('./static', 'pup_script.js', err => {
+        if (err) throw err;
+        console.log('finished running pup_script.js');
+        res.send({status: true, message: "run finished"})
+    });
+})
+app.post('/savepup', async (req, res) => {
     try {
-        if(!req.files) {
+        if (!req.files) {
             res.send({
                 status: false,
                 message: 'No file uploaded'
@@ -37,14 +45,14 @@ app.post('/savefile', async (req, res) => {
             let uploadedFile = req.files.file;
 
             //Use the mv() method to place the file in the upload directory (i.e. "uploads")
-            await uploadedFile.mv('./uploads/' + uploadedFile.name);
+            let scriptPath = './static/pup_script.js';
+            await uploadedFile.mv(scriptPath);
 
-            //send response
             res.send({
                 status: true,
-                message: 'File is uploaded',
+                message: 'Upload finished',
                 data: {
-                    name: uploadedFile.name,
+                    filepath: scriptPath,
                     mimetype: uploadedFile.mimetype,
                     size: uploadedFile.size
                 }
@@ -60,5 +68,6 @@ app.post('/savefile', async (req, res) => {
 const port = process.env.PORT || 3001;
 
 app.listen(port, () =>
-  console.log(`App is listening on port ${port}.`)
+    console.log(`App is listening on port ${port}.`)
 );
+
