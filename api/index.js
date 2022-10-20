@@ -1,14 +1,63 @@
-const express = require('express')
-const app = express()
-const port = 3001
+const express = require('express');
+const fileUpload = require('express-fileupload');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const morgan = require('morgan');
+const _ = require('lodash');
 
-app.get('/', (req, res) => {
-  console.log("hit based")
-  res.send('Hello World!')
+const app = express();
+
+// enable files upload
+app.use(fileUpload({
+    createParentPath: true
+}));
+
+//add other middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(morgan('dev'));
+
+
+// routes
+app.post('/testpost', async (req, res) => {
+    console.log(req.body);
+    res.send(req.body)
+})
+app.post('/savefile', async (req, res) => {
+    try {
+        if(!req.files) {
+            res.send({
+                status: false,
+                message: 'No file uploaded'
+            });
+        } else {
+            //Use the name of the input field (i.e. "avatar") to retrieve the uploaded file
+            let uploadedFile = req.files.file;
+
+            //Use the mv() method to place the file in the upload directory (i.e. "uploads")
+            await uploadedFile.mv('./uploads/' + uploadedFile.name);
+
+            //send response
+            res.send({
+                status: true,
+                message: 'File is uploaded',
+                data: {
+                    name: uploadedFile.name,
+                    mimetype: uploadedFile.mimetype,
+                    size: uploadedFile.size
+                }
+            });
+        }
+    } catch (err) {
+        res.status(500).send(err);
+    }
 })
 
 
+//start app
+const port = process.env.PORT || 3001;
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+app.listen(port, () =>
+  console.log(`App is listening on port ${port}.`)
+);
