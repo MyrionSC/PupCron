@@ -32,24 +32,23 @@ app.post('/testpost', async (req, res) => {
 app.post('/runscript', async (req, res, next) => {
     if (!req.body.script)
         return resWithStatusMessage(res, 400, "required body prop 'script' should be name of script to run")
-    const scriptName = req.query.script
+    const scriptName = req.body.script
 
-    // create new run dir
+    // === create new run dir and copy script to it
     const timeISO = new Date().toISOString()
-        .replace('T', '_')
-        .replace(':', '-')
+        .replaceAll('T', '_')
+        .replaceAll(':', '-')
         .substring(0, 19)
+    await fs.promises.mkdir(`static/uploaded_scripts/${scriptName}/runs/${timeISO}`, {recursive:true})
+    await fs.promises.copyFile(`static/uploaded_scripts/${scriptName}/pup_script.js`,
+        `static/uploaded_scripts/${scriptName}/runs/${timeISO}/pup_script.js`, fs.constants.COPYFILE_FICLONE)
 
-    await fs.promises.copyFile(`static/uploaded_scripts/${scriptName}/pup_scripts.js`,
-        `static/uploaded_scripts/${scriptName}/runs/${timeISO}/pup_scripts.js`)
-
-
-    // runScript('./static', 'pup_script.js', err => {
-    //     if (err) throw err;
-    //     console.log('finished running pup_script.js');
-    //     res.send({success: true, message: "run finished"})
-    // });
-    res.send({test: "lalal", params: req.query})
+    // === Run script
+    runScript(`static/uploaded_scripts/${scriptName}/runs/${timeISO}`, 'pup_script.js', err => {
+        if (err) throw err;
+        console.log('finished running pup_script.js');
+        resWithStatusMessage(res, 200, "great success")
+    });
 })
 
 app.post('/uploadscript', async (req, res) => {
