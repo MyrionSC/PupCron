@@ -32,21 +32,23 @@ app.post('/testpost', async (req, res) => {
 app.post('/runscript', async (req, res, next) => {
     if (!req.body.script)
         return resWithStatusMessage(res, 400, "required body prop 'script' should be name of script to run")
-    const scriptName = req.body.script
+    const scriptDir = req.body.script
+    let scriptName = `pup_script_modified.js`;
 
     // === create new run dir and copy script to it
     const timeISO = new Date().toISOString()
         .replaceAll('T', '_')
         .replaceAll(':', '-')
         .substring(0, 19)
-    await fs.promises.mkdir(`static/uploaded_scripts/${scriptName}/runs/${timeISO}`, {recursive:true})
-    await fs.promises.copyFile(`static/uploaded_scripts/${scriptName}/pup_script.js`,
-        `static/uploaded_scripts/${scriptName}/runs/${timeISO}/pup_script.js`, fs.constants.COPYFILE_FICLONE)
+    await fs.promises.mkdir(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, {recursive:true})
+
+    await fs.promises.copyFile(`static/uploaded_scripts/${scriptDir}/${scriptName}`,
+        `static/uploaded_scripts/${scriptDir}/runs/${timeISO}/${scriptName}`, fs.constants.COPYFILE_FICLONE)
 
     // === Run script
-    runScript(`static/uploaded_scripts/${scriptName}/runs/${timeISO}`, 'pup_script.js', err => {
+    runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, err => {
         if (err) throw err;
-        console.log('finished running pup_script.js');
+        console.log(`finished running ${scriptName}`);
         resWithStatusMessage(res, 200, "great success")
     });
 })
@@ -59,27 +61,23 @@ app.post('/uploadscript', async (req, res) => {
                 message: 'No file uploaded'
             });
         } else {
-            let uploadedFile = req.files.file; // file field must be named 'file'
+            const uploadedFile = req.files.file; // file field must be named 'file'
+
+            const fileText = uploadedFile.data.toString("utf8")
+            const fileTextModified = fileText
+                .replaceAll("page.setDefaultTimeout(timeout);\n", "page.setDefaultTimeout(timeout);\n    let pageNum = 0;\n")
+                .replaceAll("await Promise.all(promises);\n", "await Promise.all(promises);\n        await page.pdf({path: 'page' + (pageNum++) + '.pdf', format: 'A4'});")
 
             const timeISO = new Date().toISOString()
                 .replace('T', '_')
                 .replace(':', '-')
                 .substring(0, 16)
 
-            let scriptPath = `./static/uploaded_scripts/${timeISO}_${toDirCompat(uploadedFile.name)}/pup_script.js`;
+            const scriptPath = `./static/uploaded_scripts/${timeISO}_${toDirCompat(uploadedFile.name)}/pup_script_original.js`;
             await uploadedFile.mv(scriptPath);
+            await fs.promises.writeFile(`./static/uploaded_scripts/${timeISO}_${toDirCompat(uploadedFile.name)}/pup_script_modified.js`, fileTextModified, "utf8")
 
-            let resObj = {
-                success: true,
-                message: 'Upload finished',
-                data: {
-                    filepath: scriptPath,
-                    mimetype: uploadedFile.mimetype,
-                    size: uploadedFile.size
-                }
-            };
-            console.log(resObj)
-            res.send(resObj);
+            resWithStatusMessage(res, 200, "Script uploaded with success")
         }
     } catch (err) {
         res.status(500).send(err);
