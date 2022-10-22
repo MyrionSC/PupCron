@@ -31,6 +31,23 @@ function runScript(cwd, script, callback) {
     });
 }
 
+function toDirCompat(name) {
+    return name
+        .replace(".js", "")
+        .replace(".", "_")
+}
+
+function resWithStatusMessage(res, status, msg = null, data = null) {
+    res.status(status)
+    let resObj = {success: status.toString().startsWith("2"), message: msg};
+    if (data) resObj.data = data
+    if (!msg) resObj.message = resObj ? "Success" : "Failure"
+    if (!resObj.success) console.error("error:", resObj);
+    return res.json(resObj)
+}
+
 module.exports = {
-    runScript: runScript
+    runScript: runScript,
+    toDirCompat: toDirCompat,
+    resWithStatusMessage: resWithStatusMessage
 }
