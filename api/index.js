@@ -20,7 +20,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
-app.use('/static', express.static('static'))
 
 
 // routes
@@ -46,7 +45,6 @@ app.get('/script_runs', async (req, res) => {
 
     if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
         return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
-
     if (!(await dirExists(`static/uploaded_scripts/${scriptDir}/runs`)))
         return resWithStatusMessage(res, 200, null, [])
 
@@ -54,9 +52,33 @@ app.get('/script_runs', async (req, res) => {
     return resWithStatusMessage(res, 200, null, runList)
 })
 
-app.post('/testpost', async (req, res) => {
-    console.log(req.body);
-    res.send(req.body)
+app.get('/scripts/:script/runs/:run', async (req, res) => {
+    const scriptDir = req.params.script
+    const runName = req.params.run
+
+    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
+        return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
+    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)))
+        return resWithStatusMessage(res, 404, `Run with name '${runName}' does not exist`)
+
+    const runContent = await fs.promises.readdir(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)
+
+    let pageList = runContent.filter(c => c.match(RegExp(/page\d\.pdf/g)));
+    let pageListResolved = []
+    for (const page of pageList) {
+        const dl = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/${page}`)
+        pageListResolved.push({
+            name: page,
+            data: dl.toString("base64")
+        })
+    }
+
+    let data = {
+        logs: "logs.txt",
+        script: "pup_script_modified",
+        pageList: pageListResolved
+    };
+    return resWithStatusMessage(res, 200, null, data)
 })
 
 app.post('/runscript', async (req, res, next) => {

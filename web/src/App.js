@@ -6,6 +6,7 @@ export default function App() {
     const [runList, setRunList] = useState([])
     const [selectedScript, setSelectedScript] = useState("")
     const [selectedRun, setSelectedRun] = useState("")
+    const [selectedRunContent, setSelectedRunContent] = useState({pageList: []})
 
     useEffect(() => {
         fetch("http://localhost:3001/scripts_uploaded")
@@ -26,6 +27,15 @@ export default function App() {
                     setSelectedRun(runList[0])
                 });
     }, [selectedScript])
+    useEffect(() => {
+        if (selectedRun)
+            fetch(`http://localhost:3001/scripts/${selectedScript}/runs/${selectedRun}`)
+                .then(res => res.json())
+                .then(res => {
+                    console.log(res)
+                    setSelectedRunContent(res.data)
+                });
+    }, [selectedRun])
 
     return (
         <div className='main-container'>
@@ -42,8 +52,31 @@ export default function App() {
                 </div>)}
             </div>
 
-            <div style={{background: '#dddddd', padding: '.5rem', flex: '1'}}>
-                {/*<div className='button'>Run Script</div>*/}
+            <div style={{background: '#ddd', padding: '.5rem', flex: '1'}}>
+
+                <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
+                    <div style={{flex: '1'}}></div>
+                    <div style={{background: '#bbb', padding: '.5rem'}}>
+                        <div style={{display: 'flex', marginBottom: '.25rem'}}>
+                            <span style={{marginRight: '6px', flex: '1'}}>Send to mail on error:</span>
+                            <input style={{flex: '1'}} type='email'/>
+                        </div>
+                        <div style={{display: 'flex'}}>
+                            <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
+                            <input style={{flex: '1'}} placeholder='0 0 * ? * *' type='text'/>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
+                    <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.25rem'}}></div>
+                    <div style={{background: '#bbb', padding: '.5rem', flex: '2'}}>
+                        {selectedRunContent.pageList.map(page =>
+                            <embed key={page.name} src={`data:application/pdf;base64,${page.data}#toolbar=0&navpanes=0&scrollbar=0`}
+                                 type="application/pdf" width="100%" height="600px"/>)}
+                    </div>
+                </div>
+
             </div>
 
             <div className='script-list-container ms-2'>
