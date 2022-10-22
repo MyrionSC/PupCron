@@ -35,12 +35,19 @@ app.post('/runscript', async (req, res, next) => {
     const scriptDir = req.body.script
     let scriptName = `pup_script_modified.js`;
 
+    // check if exists
+    try {
+        await fs.promises.access(`static/uploaded_scripts/${scriptDir}`);
+    } catch (e) {
+        return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
+    }
+
     // === create new run dir and copy script to it
     const timeISO = new Date().toISOString()
         .replaceAll('T', '_')
         .replaceAll(':', '-')
         .substring(0, 19)
-    await fs.promises.mkdir(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, {recursive:true})
+    await fs.promises.mkdir(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, {recursive: true})
 
     await fs.promises.copyFile(`static/uploaded_scripts/${scriptDir}/${scriptName}`,
         `static/uploaded_scripts/${scriptDir}/runs/${timeISO}/${scriptName}`, fs.constants.COPYFILE_FICLONE)
@@ -66,7 +73,7 @@ app.post('/uploadscript', async (req, res) => {
             const fileText = uploadedFile.data.toString("utf8")
             const fileTextModified = fileText
                 .replaceAll("page.setDefaultTimeout(timeout);\n", "page.setDefaultTimeout(timeout);\n    let pageNum = 0;\n")
-                .replaceAll("await Promise.all(promises);\n", "await Promise.all(promises);\n        await page.pdf({path: 'page' + (pageNum++) + '.pdf', format: 'A4'});")
+                .replaceAll("await Promise.all(promises);\n", "await Promise.all(promises);\n        await page.pdf({path: 'page' + (pageNum++) + '.pdf', format: 'A4'});\n       console.log('block ' + pageNum + ' done.')")
 
             const timeISO = new Date().toISOString()
                 .replace('T', '_')
