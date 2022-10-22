@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import {FaPlusCircle, FaRegPlayCircle} from 'react-icons/fa';
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
@@ -29,6 +30,11 @@ export default function App() {
     return (
         <div className='main-container'>
             <div className='script-list-container me-2'>
+                <div style={{marginBottom: "0.5rem"}} className='button'>
+                    <div style={{display: 'flex', alignItems: 'center'}}><FaPlusCircle
+                        style={{color: "green", marginRight: '5px'}}/></div>
+                    <span>Upload script</span>
+                </div>
                 {scriptList.map(item => <div key={item} onClick={() => setSelectedScript(item)}
                                              className={item === selectedScript ? 'active' : ''}
                                              style={{padding: '0.5rem', border: '1px #aaa solid'}}>
@@ -37,10 +43,15 @@ export default function App() {
             </div>
 
             <div style={{background: '#dddddd', padding: '.5rem', flex: '1'}}>
-                <div className='button'>Run Script</div>
+                {/*<div className='button'>Run Script</div>*/}
             </div>
 
             <div className='script-list-container ms-2'>
+                <div style={{marginBottom: "0.5rem"}} className='button'>
+                    <div style={{display: 'flex', alignItems: 'center'}}><FaRegPlayCircle
+                        style={{color: "green", marginRight: '5px'}}/></div>
+                    <span>Execute run</span>
+                </div>
                 {runList.map(item => <div key={item} onClick={() => setSelectedRun(item)}
                                           className={item === selectedRun ? 'active' : ''}
                                           style={{padding: '0.5rem', border: '1px #aaa solid'}}>
