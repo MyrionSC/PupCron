@@ -25,24 +25,33 @@ app.use('/static', express.static('static'))
 
 // routes
 app.get('/scripts_uploaded', async (req, res) => {
-    return resWithStatusMessage(res, 200, null, [
-        '2022-10-22_13-58_pup_blog_marand_dk',
-        '2022-10-22_13-59_pup_blog_marand_dk',
-        '2022-10-22_13-60_pup_blog_marand_dk',
-        '2022-10-22_13-61_pup_blog_marand_dk',
-        '2022-10-22_13-62_pup_blog_marand_dk',
-        '2022-10-22_13-63_pup_blog_marand_dk'
-    ])
+    const scriptList = await fs.promises.readdir(`static/uploaded_scripts/`)
+    return resWithStatusMessage(res, 200, null, scriptList)
 })
+
+async function dirExists(dir) {
+    if (!dir) throw Error("dirExists: Param dir must be set")
+    try {
+        await fs.promises.access(dir);
+        return true
+    } catch (e) {
+        return false
+    }
+}
+
 app.get('/script_runs', async (req, res) => {
     if (!req.query.script)
         return resWithStatusMessage(res, 400, "required query param 'script' should be name of script to get runs for")
-    return resWithStatusMessage(res, 200, null, [
-        '2022-10-22_13-58-23',
-        '2022-10-22_13-58-22',
-        '2022-10-22_13-58-20',
-        '2022-10-22_13-58-17'
-    ])
+    const scriptDir = req.query.script
+
+    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
+        return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
+
+    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}/runs`)))
+        return resWithStatusMessage(res, 200, null, [])
+
+    const runList = await fs.promises.readdir(`static/uploaded_scripts/${scriptDir}/runs`)
+    return resWithStatusMessage(res, 200, null, runList)
 })
 
 app.post('/testpost', async (req, res) => {
@@ -56,12 +65,8 @@ app.post('/runscript', async (req, res, next) => {
     const scriptDir = req.body.script
     let scriptName = `pup_script_modified.js`;
 
-    // check if exists
-    try {
-        await fs.promises.access(`static/uploaded_scripts/${scriptDir}`);
-    } catch (e) {
+    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
         return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
-    }
 
     // === create new run dir and copy script to it
     const timeISO = new Date().toISOString()

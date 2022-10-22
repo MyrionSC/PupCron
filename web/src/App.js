@@ -1,6 +1,5 @@
 import {useEffect, useState} from "react";
 
-
 export default function App() {
     const [scriptList, setScriptList] = useState([])
     const [runList, setRunList] = useState([])
@@ -11,7 +10,6 @@ export default function App() {
         fetch("http://localhost:3001/scripts_uploaded")
             .then(res => res.json())
             .then(res => {
-                console.log(res)
                 const scriptList = res.data.sort().reverse();
                 setScriptList(scriptList)
                 setSelectedScript(scriptList[0])
@@ -28,15 +26,10 @@ export default function App() {
                 });
     }, [selectedScript])
 
-    function selectScript(selectedScript) {
-        setSelectedScript(selectedScript);
-        console.log(selectedScript)
-    }
-
     return (
         <div className='main-container'>
             <div className='script-list-container me-2'>
-                {scriptList.map(item => <div key={item} onClick={() => selectScript(item)}
+                {scriptList.map(item => <div key={item} onClick={() => setSelectedScript(item)}
                                              className={item === selectedScript ? 'active' : ''}
                                              style={{padding: '0.5rem', border: '1px #aaa solid'}}>
                     {item}
