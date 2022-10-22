@@ -34,6 +34,16 @@ app.get('/scripts_uploaded', async (req, res) => {
         '2022-10-22_13-63_pup_blog_marand_dk'
     ])
 })
+app.get('/script_runs', async (req, res) => {
+    if (!req.query.script)
+        return resWithStatusMessage(res, 400, "required query param 'script' should be name of script to get runs for")
+    return resWithStatusMessage(res, 200, null, [
+        '2022-10-22_13-58-23',
+        '2022-10-22_13-58-22',
+        '2022-10-22_13-58-20',
+        '2022-10-22_13-58-17'
+    ])
+})
 
 app.post('/testpost', async (req, res) => {
     console.log(req.body);
