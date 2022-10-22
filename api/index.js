@@ -24,6 +24,17 @@ app.use('/static', express.static('static'))
 
 
 // routes
+app.get('/scripts_uploaded', async (req, res) => {
+    return resWithStatusMessage(res, 200, null, [
+        '2022-10-22_13-58_pup_blog_marand_dk',
+        '2022-10-22_13-59_pup_blog_marand_dk',
+        '2022-10-22_13-60_pup_blog_marand_dk',
+        '2022-10-22_13-61_pup_blog_marand_dk',
+        '2022-10-22_13-62_pup_blog_marand_dk',
+        '2022-10-22_13-63_pup_blog_marand_dk'
+    ])
+})
+
 app.post('/testpost', async (req, res) => {
     console.log(req.body);
     res.send(req.body)

@@ -7,6 +7,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+* {
+    border-collapse: collapse;
+}
+
+.script-list-container {
+  max-width: 350px;
+  background-color: #ddd;
+  padding: .5rem;
+  margin-right: 1rem;
+  cursor: pointer;
+}
+.script-list-container > div:hover {
+  background: #ccc;
+}
+.script-list-container > div.active {
+  background: #ccc;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
