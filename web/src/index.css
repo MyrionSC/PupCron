@@ -26,13 +26,6 @@ body {
     max-width: 350px;
     background-color: #ddd;
     padding: .5rem;
-    cursor: pointer;
-}
-.me-2 {
-    margin-right: .5rem !important;
-}
-.ms-2 {
-    margin-left: .5rem !important;
 }
 
 .script-list-container > div:hover {
@@ -60,3 +53,21 @@ code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Single props */
+.me-2 {
+    margin-right: .5rem !important;
+}
+
+.ms-2 {
+    margin-left: .5rem !important;
+}
+.mb-2 {
+    margin-bottom: .5rem !important;
+}
+
+.cursor-pointer {
+    cursor: pointer !important;
+}
+
+

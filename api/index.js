@@ -73,9 +73,18 @@ app.get('/scripts/:script/runs/:run', async (req, res) => {
         })
     }
 
+    const logsBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/logs.txt`)
+    const scriptBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/pup_script_modified.js`)
+
     let data = {
-        logs: "logs.txt",
-        script: "pup_script_modified",
+        logs: {
+            name: "logs.txt",
+            text: logsBytes.toString("utf8")
+        },
+        script: {
+            name: "pup_script_modified.js",
+            text: scriptBytes.toString("utf8")
+        },
         pageList: pageListResolved
     };
     return resWithStatusMessage(res, 200, null, data)
