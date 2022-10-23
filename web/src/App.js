@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {FaPlusCircle, FaRegPlayCircle} from 'react-icons/fa';
+import LoadingSpinner from "./spinner/LoadingSpinner";
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
@@ -17,25 +18,34 @@ export default function App() {
                 setSelectedScript(scriptList[0])
             });
     }, [])
+
+    function fetchSelectedScriptRunList() {
+        return fetch(`http://localhost:3001/script_runs?script=${selectedScript}`)
+            .then(res => res.json())
+            .then(res => {
+                const runList = res.data.sort().reverse();
+                setRunList(runList)
+                setSelectedRun(runList[0])
+            });
+    }
+
     useEffect(() => {
-        if (selectedScript)
-            fetch(`http://localhost:3001/script_runs?script=${selectedScript}`)
-                .then(res => res.json())
-                .then(res => {
-                    const runList = res.data.sort().reverse();
-                    setRunList(runList)
-                    setSelectedRun(runList[0])
-                });
+        if (selectedScript) fetchSelectedScriptRunList().then();
+        // eslint-disable-next-line
     }, [selectedScript])
+
     useEffect(() => {
         if (selectedRun)
             fetch(`http://localhost:3001/scripts/${selectedScript}/runs/${selectedRun}`)
                 .then(res => res.json())
-                .then(res => {
-                    console.log(res)
-                    setSelectedRunContent(res.data)
-                });
-    }, [selectedRun])
+                .then(res => setSelectedRunContent(res.data));
+    }, [selectedRun, selectedScript])
+
+    function executeRun() {
+        setSelectedRunContent(null)
+        fetch(`http://localhost:3001/scripts/${selectedScript}/newrun`, {method: "POST"})
+            .then(fetchSelectedScriptRunList)
+    }
 
     return (
         <div className='main-container'>
@@ -56,7 +66,7 @@ export default function App() {
 
             {/* === Main content === */}
             <div style={{background: '#ddd', padding: '.5rem', flex: '1'}}>
-
+                {!selectedRunContent && <div style={{display: 'flex', justifyContent: 'center', marginTop: '100px'}}><LoadingSpinner/></div>}
                 {selectedRunContent &&
                     <React.Fragment>
                         <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
@@ -114,7 +124,7 @@ export default function App() {
 
             {/* === Run list === */}
             <div className='script-list-container ms-2'>
-                <div style={{marginBottom: "0.5rem"}} className='button'>
+                <div style={{marginBottom: "0.5rem"}} className='button' onClick={() => executeRun()}>
                     <div style={{display: 'flex', alignItems: 'center'}}><FaRegPlayCircle
                         style={{color: "green", marginRight: '5px'}}/></div>
                     <span>Execute run</span>

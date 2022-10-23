@@ -90,10 +90,10 @@ app.get('/scripts/:script/runs/:run', async (req, res) => {
     return resWithStatusMessage(res, 200, null, data)
 })
 
-app.post('/runscript', async (req, res, next) => {
-    if (!req.body.script)
-        return resWithStatusMessage(res, 400, "required body prop 'script' should be name of script to run")
-    const scriptDir = req.body.script
+app.post('/scripts/:script/newrun', async (req, res, next) => {
+    if (!req.params.script)
+        return resWithStatusMessage(res, 400, "required param prop 'script' should be name of script to run")
+    const scriptDir = req.params.script
     let scriptName = `pup_script_modified.js`;
 
     if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
