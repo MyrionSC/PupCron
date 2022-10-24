@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {FaPlusCircle, FaRegPlayCircle} from 'react-icons/fa';
 import LoadingSpinner from "./spinner/LoadingSpinner";
+import cronstrue from 'cronstrue';
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
@@ -8,6 +9,11 @@ export default function App() {
     const [selectedScript, setSelectedScript] = useState("")
     const [selectedRun, setSelectedRun] = useState("")
     const [selectedRunContent, setSelectedRunContent] = useState(null)
+
+    const [cronValue, setCronValue] = useState("")
+    const [cronActive, setCronActive] = useState(false)
+    const [cronExplained, setCronExplained] = useState("")
+    const [cronError, setCronError] = useState("")
 
     function fetchScriptsUploadedList() {
         return fetch("http://localhost:3001/scripts_uploaded")
@@ -48,6 +54,7 @@ export default function App() {
                 .then(res => res.json())
                 .then(res => setSelectedRunContent(res.data));
         }
+        // eslint-disable-next-line
     }, [selectedRun])
 
     function executeRun(script) {
@@ -72,6 +79,17 @@ export default function App() {
             });
         await executeRun(newScript)
         input.value = null
+    }
+
+    function changeCron(value) {
+        setCronValue(value)
+        setCronExplained("")
+        setCronError("")
+        try {
+            setCronExplained(cronstrue.toString(value))
+        } catch (e) {
+            setCronError(e)
+        }
     }
 
     return (
@@ -99,12 +117,20 @@ export default function App() {
                     <div style={{background: '#bbb', padding: '.5rem'}}>
                         <div style={{display: 'flex', marginBottom: '.5rem'}}>
                             <span style={{marginRight: '6px', flex: '1'}}>Send to mail on error:</span>
-                            <input style={{flex: '1', padding: "3px"}} type='email'/>
+                            <input style={{flex: '1', padding: "3px", width: '190px'}} type='email'/>
                         </div>
-                        <div style={{display: 'flex'}}>
+                        <div style={{display: 'flex', marginBottom: '.25rem'}}>
                             <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
-                            <input style={{flex: '1', padding: "3px"}} placeholder='0 0 * ? * *' type='text'/>
+                            <div style={{display: 'flex'}}>
+                                <input style={{padding: "3px", width: '160px'}} placeholder='0 0 * ? * *'
+                                       onChange={(e) => changeCron(e.target.value)}
+                                       value={cronValue} type='text'/>
+                                <input type="checkbox" onChange={() => setCronActive(!cronActive)}
+                                       checked={cronActive}/>
+                            </div>
                         </div>
+                        <div style={{color: '#009900', fontSize: '13px', float: 'right'}}>{cronExplained}</div>
+                        <div style={{color: '#af0000', fontSize: '12px', float: 'right'}}>{cronError}</div>
                     </div>
                 </div>
 
