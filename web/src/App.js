@@ -66,25 +66,30 @@ export default function App() {
 
             {/* === Main content === */}
             <div style={{background: '#ddd', padding: '.5rem', flex: '1'}}>
-                {!selectedRunContent && <div style={{display: 'flex', justifyContent: 'center', marginTop: '100px'}}><LoadingSpinner/></div>}
-                {selectedRunContent &&
-                    <React.Fragment>
-                        <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
-                            <div style={{flex: '1'}}></div>
-                            <div style={{background: '#bbb', padding: '.5rem'}}>
-                                <div style={{display: 'flex', marginBottom: '.25rem'}}>
-                                    <span style={{marginRight: '6px', flex: '1'}}>Send to mail on error:</span>
-                                    <input style={{flex: '1'}} type='email'/>
-                                </div>
-                                <div style={{display: 'flex'}}>
-                                    <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
-                                    <input style={{flex: '1'}} placeholder='0 0 * ? * *' type='text'/>
-                                </div>
-                            </div>
+                <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
+                    <div style={{flex: '1'}}></div>
+                    <div style={{background: '#bbb', padding: '.5rem'}}>
+                        <div style={{display: 'flex', marginBottom: '.25rem'}}>
+                            <span style={{marginRight: '6px', flex: '1'}}>Send to mail on error:</span>
+                            <input style={{flex: '1'}} type='email'/>
                         </div>
+                        <div style={{display: 'flex'}}>
+                            <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
+                            <input style={{flex: '1'}} placeholder='0 0 * ? * *' type='text'/>
+                        </div>
+                    </div>
+                </div>
 
-                        <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
-
+                <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
+                    {!selectedRunContent &&
+                        <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.25rem'}}>
+                            <div style={{display: 'flex', justifyContent: 'center',
+                                marginTop: '100px', marginBottom: '400px'}}>
+                                <LoadingSpinner/>
+                            </div>
+                        </div>}
+                    {selectedRunContent &&
+                        <React.Fragment>
                             <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.25rem'}}>
                                 <div className='mb-2'>
                                     Result: <span style={{color: "green"}}>Great success</span>
@@ -115,11 +120,10 @@ export default function App() {
                                            src={`data:application/pdf;base64,${page.data}#toolbar=0&navpanes=0&scrollbar=0`}
                                            type="application/pdf" width="100%" height="600px"/>)}
                             </div>
-                        </div>
 
-                    </React.Fragment>
-                }
-
+                        </React.Fragment>
+                    }
+                </div>
             </div>
 
             {/* === Run list === */}
