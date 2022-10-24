@@ -9,42 +9,69 @@ export default function App() {
     const [selectedRun, setSelectedRun] = useState("")
     const [selectedRunContent, setSelectedRunContent] = useState(null)
 
-    useEffect(() => {
-        fetch("http://localhost:3001/scripts_uploaded")
+    function fetchScriptsUploadedList() {
+        return fetch("http://localhost:3001/scripts_uploaded")
             .then(res => res.json())
-            .then(res => {
-                const scriptList = res.data.sort().reverse();
+            .then(res => res.data.sort().reverse())
+    }
+
+    useEffect(() => {
+        fetchScriptsUploadedList()
+            .then(scriptList => {
                 setScriptList(scriptList)
                 setSelectedScript(scriptList[0])
             });
     }, [])
 
-    function fetchSelectedScriptRunList() {
-        return fetch(`http://localhost:3001/script_runs?script=${selectedScript}`)
+    function fetchSelectedScriptRunList(script) {
+        return fetch(`http://localhost:3001/script_runs?script=${script}`)
             .then(res => res.json())
-            .then(res => {
-                const runList = res.data.sort().reverse();
-                setRunList(runList)
-                setSelectedRun(runList[0])
-            });
+            .then(res => res.data.sort().reverse());
+    }
+
+    function setSelectedRunList(runList) {
+        setRunList(runList)
+        setSelectedRun(runList[0] ?? null)
+        if (!runList[0]) setSelectedRunContent(null)
     }
 
     useEffect(() => {
-        if (selectedScript) fetchSelectedScriptRunList().then();
-        // eslint-disable-next-line
+        if (selectedScript) {
+            fetchSelectedScriptRunList(selectedScript)
+                .then(setSelectedRunList);
+        }
     }, [selectedScript])
 
     useEffect(() => {
-        if (selectedRun)
+        if (selectedRun) {
             fetch(`http://localhost:3001/scripts/${selectedScript}/runs/${selectedRun}`)
                 .then(res => res.json())
                 .then(res => setSelectedRunContent(res.data));
-    }, [selectedRun, selectedScript])
+        }
+    }, [selectedRun])
 
-    function executeRun() {
+    function executeRun(script) {
         setSelectedRunContent(null)
-        fetch(`http://localhost:3001/scripts/${selectedScript}/newrun`, {method: "POST"})
-            .then(fetchSelectedScriptRunList)
+        return fetch(`http://localhost:3001/scripts/${script}/newrun`, {method: "POST"})
+            .then(() => fetchSelectedScriptRunList(script))
+            .then(setSelectedRunList)
+    }
+
+    async function uploadNewScript() {
+        const input = document.querySelector('input[type="file"]')
+        if (!input.value) return
+        const data = new FormData()
+        data.append('file', input.files[0])
+        await fetch(`http://localhost:3001/uploadscript`, {method: "POST", body: data})
+        let newScript = "";
+        await fetchScriptsUploadedList()
+            .then(scriptList => {
+                setScriptList(scriptList)
+                setSelectedScript(scriptList[0])
+                newScript = scriptList[0]
+            });
+        await executeRun(newScript)
+        input.value = null
     }
 
     return (
@@ -52,11 +79,12 @@ export default function App() {
 
             {/* === Script List === */}
             <div className='script-list-container me-2'>
-                <div style={{marginBottom: "0.5rem"}} className='button'>
+                <label style={{marginBottom: "0.5rem"}} className='button'>
                     <div style={{display: 'flex', alignItems: 'center'}}><FaPlusCircle
                         style={{color: "green", marginRight: '5px'}}/></div>
                     <span>Upload script</span>
-                </div>
+                    <input style={{display: 'none'}} type='file' onChange={uploadNewScript}/>
+                </label>
                 {scriptList.map(item => <div key={item} onClick={() => setSelectedScript(item)}
                                              className={(item === selectedScript ? 'active' : '') + ' cursor-pointer'}
                                              style={{padding: '0.5rem', border: '1px #aaa solid'}}>
@@ -69,13 +97,13 @@ export default function App() {
                 <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
                     <div style={{flex: '1'}}></div>
                     <div style={{background: '#bbb', padding: '.5rem'}}>
-                        <div style={{display: 'flex', marginBottom: '.25rem'}}>
+                        <div style={{display: 'flex', marginBottom: '.5rem'}}>
                             <span style={{marginRight: '6px', flex: '1'}}>Send to mail on error:</span>
-                            <input style={{flex: '1'}} type='email'/>
+                            <input style={{flex: '1', padding: "3px"}} type='email'/>
                         </div>
                         <div style={{display: 'flex'}}>
                             <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
-                            <input style={{flex: '1'}} placeholder='0 0 * ? * *' type='text'/>
+                            <input style={{flex: '1', padding: "3px"}} placeholder='0 0 * ? * *' type='text'/>
                         </div>
                     </div>
                 </div>
@@ -83,8 +111,10 @@ export default function App() {
                 <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
                     {!selectedRunContent &&
                         <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.25rem'}}>
-                            <div style={{display: 'flex', justifyContent: 'center',
-                                marginTop: '100px', marginBottom: '400px'}}>
+                            <div style={{
+                                display: 'flex', justifyContent: 'center',
+                                marginTop: '100px', marginBottom: '400px'
+                            }}>
                                 <LoadingSpinner/>
                             </div>
                         </div>}
@@ -128,7 +158,7 @@ export default function App() {
 
             {/* === Run list === */}
             <div className='script-list-container ms-2'>
-                <div style={{marginBottom: "0.5rem"}} className='button' onClick={() => executeRun()}>
+                <div style={{marginBottom: "0.5rem"}} className='button' onClick={() => executeRun(selectedScript)}>
                     <div style={{display: 'flex', alignItems: 'center'}}><FaRegPlayCircle
                         style={{color: "green", marginRight: '5px'}}/></div>
                     <span>Execute run</span>
