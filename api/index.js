@@ -16,7 +16,7 @@ app.use(fileUpload({
 }));
 
 //add other middleware
-app.use(cors());
+app.use(cors({origin: ["http://localhost:3000", "https://cronpup.marand.dk"]}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
