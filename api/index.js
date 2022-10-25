@@ -21,7 +21,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
 
-
 // routes
 app.get('/scripts_uploaded', async (req, res) => {
     const scriptList = await fs.promises.readdir(`static/uploaded_scripts/`)
@@ -128,8 +127,7 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
     // === Run script
     runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, async code => {
         console.log(`finished run with code ${code}`);
-        let data = await getScriptRunContent(scriptDir, timeISO);
-        resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error', data)
+        resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error')
     });
 })
 
@@ -142,7 +140,7 @@ app.post('/uploadscript', async (req, res) => {
         const fileText = uploadedFile.data.toString("utf8")
         const fileTextModified = fileText
             .replaceAll("page.setDefaultTimeout(timeout);\n", "page.setDefaultTimeout(timeout);\n    const delay = time => new Promise(res=>setTimeout(res,time));\n    let pageNum = 0;\n")
-            .replaceAll("await Promise.all(promises);\n", "await Promise.all(promises);\n        await delay(250);\n        await page.pdf({path: 'page' + (pageNum++) + '.pdf', format: 'A4'});\n       console.log('block ' + pageNum + ' done.')")
+            .replaceAll("await Promise.all(promises);\n", "await Promise.all(promises);\n        await delay(250);\n        await page.pdf({path: 'page' + (pageNum++) + '.pdf', format: 'A4'});\n        console.log('block ' + pageNum + ' done.')")
 
         const timeISO = new Date().toISOString()
             .replace('T', '_')

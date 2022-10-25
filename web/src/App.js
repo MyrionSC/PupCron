@@ -87,8 +87,9 @@ export default function App() {
 
         await apiExecuteRun(scriptsUploadedList[0])
 
-        setScriptList(scriptsUploadedList)
-        setSelectedScript(scriptList[0])
+        const scriptsUploadedAfterRunList = await fetchScriptsUploadedList()
+        setScriptList(scriptsUploadedAfterRunList)
+        setSelectedScript(scriptsUploadedAfterRunList[0])
 
         input.value = null
     }
@@ -175,6 +176,7 @@ export default function App() {
                             </div>
 
                             <div style={{background: '#bbb', padding: '.5rem', flex: '2'}}>
+                                {selectedRunContent.pageList.length === 0 && <div>No pages to show</div>}
                                 {selectedRunContent.pageList.map(page =>
                                     <embed key={page.name}
                                            src={`data:application/pdf;base64,${page.data}#toolbar=0&navpanes=0&scrollbar=0`}
