@@ -8,33 +8,38 @@ function runScript(cwd, script, callback) {
     const process = childProcess.fork(script, {cwd: cwd, silent: true});
     const stream = fs.createWriteStream(cwd + "/logs.txt", {flags: 'a', encoding: 'utf8'});
     const decoder = new StringDecoder('utf8');
-    stream.write(`Run started at: ${new Date().toISOString()}\n`)
+    const runStart = new Date().toISOString();
+    stream.write(`Run started at: ${runStart}\n`)
 
     process.stdout.on('data', (data) => {
         stream.write(data)
         console.log(decoder.write(data))
     });
 
-    // listen for errors as they may prevent the exit event from firing
+    function finishRun(code) {
+        const runEnd = new Date().toISOString();
+        stream.write(`Run finished at: ${runEnd}\n`)
+        stream.write(`Result: ${code === 0 ? 'Success' : 'Failure'}\n`)
+        const resultStream = fs.createWriteStream(cwd + "/results.json", {flags: 'a', encoding: 'utf8'});
+        resultStream.write(JSON.stringify({success: code === 0, start: runStart, end: runEnd}))
+        resultStream.close()
+        stream.close()
+        callback(code);
+    }
+
+// listen for errors as they may prevent the exit event from firing
     process.on('error', function (err) {
         if (invoked) return;
         invoked = true;
-        stream.write(`Run finished at: ${new Date().toISOString()}\n`)
-        stream.write(`Result: Failure\n`)
-        stream.close()
         console.error("helper.js:runScript error", err)
-        callback(err);
+        finishRun(1);
     });
 
     // execute the callback once the process has finished running
     process.on('exit', function (code) {
         if (invoked) return;
         invoked = true;
-        stream.write(`Run finished at: ${new Date().toISOString()}\n`)
-        stream.write(`Result: ${code === 0 ? 'Success' : 'Failure'}\n`)
-        stream.close()
-        console.log(code)
-        callback(code)
+        finishRun(code);
     });
 }
 

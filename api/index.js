@@ -52,15 +52,7 @@ app.get('/script_runs', async (req, res) => {
     return resWithStatusMessage(res, 200, null, runList)
 })
 
-app.get('/scripts/:script/runs/:run', async (req, res) => {
-    const scriptDir = req.params.script
-    const runName = req.params.run
-
-    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
-        return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
-    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)))
-        return resWithStatusMessage(res, 404, `Run with name '${runName}' does not exist`)
-
+async function getScriptRunContent(scriptDir, runName) {
     const runContent = await fs.promises.readdir(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)
 
     let pageList = runContent.filter(c => c.match(RegExp(/page\d\.pdf/g)));
@@ -76,7 +68,17 @@ app.get('/scripts/:script/runs/:run', async (req, res) => {
     const logsBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/logs.txt`)
     const scriptBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/pup_script_modified.js`)
 
-    let data = {
+    // TODO: remove later
+    let tempRes = null
+    try {
+        const resultBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/results.json`)
+        tempRes = JSON.parse(resultBytes.toString())
+    } catch (e) {
+        console.error(e)
+        tempRes = {success: true}
+    }
+
+    return {
         logs: {
             name: "logs.txt",
             text: logsBytes.toString("utf8")
@@ -85,8 +87,22 @@ app.get('/scripts/:script/runs/:run', async (req, res) => {
             name: "pup_script_modified.js",
             text: scriptBytes.toString("utf8")
         },
+        results: tempRes,
         pageList: pageListResolved
     };
+}
+
+app.get('/scripts/:script/runs/:run', async (req, res) => {
+    const scriptDir = req.params.script
+    const runName = req.params.run
+
+    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
+        return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
+    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)))
+        return resWithStatusMessage(res, 404, `Run with name '${runName}' does not exist`)
+
+    let data = await getScriptRunContent(scriptDir, runName);
+
     return resWithStatusMessage(res, 200, null, data)
 })
 
@@ -110,9 +126,10 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
         `static/uploaded_scripts/${scriptDir}/runs/${timeISO}/${scriptName}`, fs.constants.COPYFILE_FICLONE)
 
     // === Run script
-    runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, code => {
+    runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, async code => {
         console.log(`finished run with code ${code}`);
-        resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error')
+        let data = await getScriptRunContent(scriptDir, timeISO);
+        resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error', data)
     });
 })
 

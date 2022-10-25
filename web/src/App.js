@@ -161,7 +161,8 @@ export default function App() {
                         <React.Fragment>
                             <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.25rem'}}>
                                 <div className='mb-2'>
-                                    Result: <span style={{color: "green"}}>Great success</span>
+                                    Result: <span style={{color: selectedRunContent.results.success ? "green" : "darkred"}}>
+                                        {selectedRunContent.results.success ? "Success" : "Failure"}</span>
                                 </div>
 
                                 <div className='mb-2'>
@@ -187,8 +188,9 @@ export default function App() {
 
             {/* === Run list === */}
             <div className='script-list-container ms-2'>
-                <div style={{marginBottom: "0.5rem", width: "100%"}} className={`button ${runButtonDisabled ? 'disabled' : ''}`}
-                        onClick={() => executeRun(selectedScript)}>
+                <div style={{marginBottom: "0.5rem", width: "100%"}}
+                     className={`button ${runButtonDisabled ? 'disabled' : ''}`}
+                     onClick={() => executeRun(selectedScript)}>
                     <div style={{display: 'flex', alignItems: 'center'}}><FaRegPlayCircle
                         style={{color: "green", marginRight: '5px'}}/></div>
                     <span>Execute run</span>
