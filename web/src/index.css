@@ -40,9 +40,16 @@ body {
     padding: .5rem;
     cursor: pointer;
     border: 1px gray solid;
+    background-color: #f0f0f0;
     border-radius: 6px;
     display: flex;
     justify-content: center;
+}
+
+.button.disabled {
+    cursor: initial;
+    pointer-events: none;
+    color: #383636;
 }
 
 .button:hover {

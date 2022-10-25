@@ -110,10 +110,9 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
         `static/uploaded_scripts/${scriptDir}/runs/${timeISO}/${scriptName}`, fs.constants.COPYFILE_FICLONE)
 
     // === Run script
-    runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, err => {
-        if (err) throw err;
-        console.log(`finished running ${scriptName}`);
-        resWithStatusMessage(res, 200, "great success")
+    runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, code => {
+        console.log(`finished run with code ${code}`);
+        resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error')
     });
 })
 

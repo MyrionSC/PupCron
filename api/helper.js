@@ -8,6 +8,7 @@ function runScript(cwd, script, callback) {
     const process = childProcess.fork(script, {cwd: cwd, silent: true});
     const stream = fs.createWriteStream(cwd + "/logs.txt", {flags: 'a', encoding: 'utf8'});
     const decoder = new StringDecoder('utf8');
+    stream.write(`Run started at: ${new Date().toISOString()}\n`)
 
     process.stdout.on('data', (data) => {
         stream.write(data)
@@ -18,7 +19,10 @@ function runScript(cwd, script, callback) {
     process.on('error', function (err) {
         if (invoked) return;
         invoked = true;
+        stream.write(`Run finished at: ${new Date().toISOString()}\n`)
+        stream.write(`Result: Failure\n`)
         stream.close()
+        console.error("helper.js:runScript error", err)
         callback(err);
     });
 
@@ -26,8 +30,11 @@ function runScript(cwd, script, callback) {
     process.on('exit', function (code) {
         if (invoked) return;
         invoked = true;
+        stream.write(`Run finished at: ${new Date().toISOString()}\n`)
+        stream.write(`Result: ${code === 0 ? 'Success' : 'Failure'}\n`)
         stream.close()
-        callback(code === 0 ? null : new Error('exit code ' + code));
+        console.log(code)
+        callback(code)
     });
 }
 

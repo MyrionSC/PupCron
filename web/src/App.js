@@ -9,6 +9,7 @@ export default function App() {
     const [selectedScript, setSelectedScript] = useState("")
     const [selectedRun, setSelectedRun] = useState("")
     const [selectedRunContent, setSelectedRunContent] = useState(null)
+    const [runButtonDisabled, setRunButtonDisabled] = useState(false)
 
     const [cronValue, setCronValue] = useState("")
     const [cronActive, setCronActive] = useState(false)
@@ -58,10 +59,13 @@ export default function App() {
     }, [selectedRun])
 
     function executeRun(script) {
+        console.log("running executeRun", script)
+        setRunButtonDisabled(true)
         setSelectedRunContent(null)
         return fetch(`http://localhost:3001/scripts/${script}/newrun`, {method: "POST"})
             .then(() => fetchSelectedScriptRunList(script))
             .then(setSelectedRunList)
+            .then(() => setRunButtonDisabled(false))
     }
 
     async function uploadNewScript() {
@@ -69,15 +73,24 @@ export default function App() {
         if (!input.value) return
         const data = new FormData()
         data.append('file', input.files[0])
+
+        setSelectedRun("")
+        setSelectedRunContent(null)
+        setRunList([])
+
         await fetch(`http://localhost:3001/uploadscript`, {method: "POST", body: data})
-        let newScript = "";
-        await fetchScriptsUploadedList()
-            .then(scriptList => {
-                setScriptList(scriptList)
-                setSelectedScript(scriptList[0])
-                newScript = scriptList[0]
-            });
-        await executeRun(newScript)
+        const scriptsUploadedList = await fetchScriptsUploadedList()
+
+        // let newScript = "";
+        // await fetchScriptsUploadedList()
+        //     .then(scriptList => {
+        //         setScriptList(scriptList)
+        //         setSelectedScript(scriptList[0])
+        //         newScript = scriptList[0]
+        //     });
+        // console.log(newScript)
+        // await executeRun(newScript)
+
         input.value = null
     }
 
@@ -97,7 +110,7 @@ export default function App() {
 
             {/* === Script List === */}
             <div className='script-list-container me-2'>
-                <label style={{marginBottom: "0.5rem"}} className='button'>
+                <label style={{marginBottom: "0.5rem", width: "100%"}} className='button'>
                     <div style={{display: 'flex', alignItems: 'center'}}><FaPlusCircle
                         style={{color: "green", marginRight: '5px'}}/></div>
                     <span>Upload script</span>
@@ -158,17 +171,7 @@ export default function App() {
                                             <div key={idx}>{it}</div>)}
                                     </div>
                                 </div>
-
-                                {/*<div className='mb-2'>*/}
-                                {/*    Script*/}
-                                {/*    <div className='ms-2'>*/}
-                                {/*        {selectedRunContent.script.text.split("\n").map((it, idx) =>*/}
-                                {/*            <div key={idx}>{it}</div>)}*/}
-                                {/*    </div>*/}
-                                {/*</div>*/}
-
                             </div>
-
 
                             <div style={{background: '#bbb', padding: '.5rem', flex: '2'}}>
                                 {selectedRunContent.pageList.map(page =>
@@ -184,7 +187,8 @@ export default function App() {
 
             {/* === Run list === */}
             <div className='script-list-container ms-2'>
-                <div style={{marginBottom: "0.5rem"}} className='button' onClick={() => executeRun(selectedScript)}>
+                <div style={{marginBottom: "0.5rem", width: "100%"}} className={`button ${runButtonDisabled ? 'disabled' : ''}`}
+                        onClick={() => executeRun(selectedScript)}>
                     <div style={{display: 'flex', alignItems: 'center'}}><FaRegPlayCircle
                         style={{color: "green", marginRight: '5px'}}/></div>
                     <span>Execute run</span>
