@@ -58,11 +58,14 @@ export default function App() {
         // eslint-disable-next-line
     }, [selectedRun])
 
+    function apiExecuteRun(script) {
+        return fetch(`http://localhost:3001/scripts/${script}/newrun`, {method: "POST"})
+    }
+
     function executeRun(script) {
-        console.log("running executeRun", script)
         setRunButtonDisabled(true)
         setSelectedRunContent(null)
-        return fetch(`http://localhost:3001/scripts/${script}/newrun`, {method: "POST"})
+        return apiExecuteRun(script)
             .then(() => fetchSelectedScriptRunList(script))
             .then(setSelectedRunList)
             .then(() => setRunButtonDisabled(false))
@@ -74,6 +77,7 @@ export default function App() {
         const data = new FormData()
         data.append('file', input.files[0])
 
+        setSelectedScript("")
         setSelectedRun("")
         setSelectedRunContent(null)
         setRunList([])
@@ -81,15 +85,10 @@ export default function App() {
         await fetch(`http://localhost:3001/uploadscript`, {method: "POST", body: data})
         const scriptsUploadedList = await fetchScriptsUploadedList()
 
-        // let newScript = "";
-        // await fetchScriptsUploadedList()
-        //     .then(scriptList => {
-        //         setScriptList(scriptList)
-        //         setSelectedScript(scriptList[0])
-        //         newScript = scriptList[0]
-        //     });
-        // console.log(newScript)
-        // await executeRun(newScript)
+        await apiExecuteRun(scriptsUploadedList[0])
+
+        setScriptList(scriptsUploadedList)
+        setSelectedScript(scriptList[0])
 
         input.value = null
     }
@@ -161,7 +160,8 @@ export default function App() {
                         <React.Fragment>
                             <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.25rem'}}>
                                 <div className='mb-2'>
-                                    Result: <span style={{color: selectedRunContent.results.success ? "green" : "darkred"}}>
+                                    Result: <span
+                                    style={{color: selectedRunContent.results.success ? "green" : "darkred"}}>
                                         {selectedRunContent.results.success ? "Success" : "Failure"}</span>
                                 </div>
 
