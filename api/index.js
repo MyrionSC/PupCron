@@ -2,7 +2,6 @@ require("express-async-errors");
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const _ = require('lodash');
 const {runScript, toDirCompat, resWithStatusMessage} = require("./helper");
@@ -17,9 +16,8 @@ app.use(fileUpload({
 
 //add other middleware
 app.use(cors({origin: ["http://localhost:3000", "https://cronpup.marand.dk"]}));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
 app.use(morgan('dev'));
+app.use(express.json())
 
 // routes
 app.get('/scripts_uploaded', async (req, res) => {
@@ -27,10 +25,10 @@ app.get('/scripts_uploaded', async (req, res) => {
     return resWithStatusMessage(res, 200, null, scriptList)
 })
 
-async function dirExists(dir) {
-    if (!dir) throw Error("dirExists: Param dir must be set")
+async function exists(fileOrDir) {
+    if (!fileOrDir) throw Error("exists: fileOrDir must be set")
     try {
-        await fs.promises.access(dir);
+        await fs.promises.access(fileOrDir);
         return true
     } catch (e) {
         return false
@@ -42,9 +40,9 @@ app.get('/script_runs', async (req, res) => {
         return resWithStatusMessage(res, 400, "required query param 'script' should be name of script to get runs for")
     const scriptDir = req.query.script
 
-    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
+    if (!(await exists(`static/uploaded_scripts/${scriptDir}`)))
         return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
-    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}/runs`)))
+    if (!(await exists(`static/uploaded_scripts/${scriptDir}/runs`)))
         return resWithStatusMessage(res, 200, null, [])
 
     const runList = await fs.promises.readdir(`static/uploaded_scripts/${scriptDir}/runs`)
@@ -95,9 +93,9 @@ app.get('/scripts/:script/runs/:run', async (req, res) => {
     const scriptDir = req.params.script
     const runName = req.params.run
 
-    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
+    if (!(await exists(`static/uploaded_scripts/${scriptDir}`)))
         return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
-    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)))
+    if (!(await exists(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)))
         return resWithStatusMessage(res, 404, `Run with name '${runName}' does not exist`)
 
     let data = await getScriptRunContent(scriptDir, runName);
@@ -111,7 +109,7 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
     const scriptDir = req.params.script
     let scriptName = `pup_script_modified.js`;
 
-    if (!(await dirExists(`static/uploaded_scripts/${scriptDir}`)))
+    if (!(await exists(`static/uploaded_scripts/${scriptDir}`)))
         return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
 
     // === create new run dir and copy script to it
@@ -129,6 +127,32 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
         console.log(`finished run with code ${code}`);
         resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error')
     });
+})
+
+app.put('/scripts/:script/config', async (req, res, next) => {
+    if (!req.body) return resWithStatusMessage(res, 400, "body required")
+    const scriptDir = req.params.script
+    let configFileName = `config.json`;
+
+    let config = {}
+    if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
+        const configBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
+        config = JSON.parse(configBytes.toString())
+    }
+
+    Object.keys(req.body).forEach(key => {
+        console.log(key)
+        console.log(req.body[key])
+        config[key] = req.body[key]
+    })
+
+    const stream = fs.createWriteStream(`static/uploaded_scripts/${scriptDir}/${configFileName}`
+        , {flags: 'w', encoding: 'utf8'});
+    stream.write(JSON.stringify(config))
+    stream.close()
+
+    // TODO: update cron if set
+    return resWithStatusMessage(res, 200)
 })
 
 app.post('/uploadscript', async (req, res) => {

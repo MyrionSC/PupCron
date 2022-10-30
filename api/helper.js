@@ -18,17 +18,16 @@ function runScript(cwd, script, callback) {
 
     process.stderr.on('data', (data) => {
         const str = decoder.write(data)
+        console.log(str)
         if (!(str.includes("Debugger listening on") || str.includes("For help, see") ||
             str.includes("Waiting for the debugger to disconnect") || str.includes("Debugger attached"))) {
             stream.write(data)
-            console.log(str)
         }
     });
 
     function finishRun(code) {
         const runEnd = new Date().toISOString();
         stream.write(`\n=== Run finished at: ${runEnd}\n`)
-        stream.write(`Result: ${code === 0 ? 'Success' : 'Failure'}\n`)
         const resultStream = fs.createWriteStream(cwd + "/results.json", {flags: 'a', encoding: 'utf8'});
         resultStream.write(JSON.stringify({success: code === 0, start: runStart, end: runEnd}))
         resultStream.close()

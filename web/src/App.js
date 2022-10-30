@@ -11,6 +11,9 @@ export default function App() {
     const [selectedRunContent, setSelectedRunContent] = useState(null)
     const [runButtonDisabled, setRunButtonDisabled] = useState(false)
 
+    const [emailValue, setEmailValue] = useState("")
+    const [emailActive, setEmailActive] = useState(false)
+
     const [cronValue, setCronValue] = useState("")
     const [cronActive, setCronActive] = useState(false)
     const [cronExplained, setCronExplained] = useState("")
@@ -62,6 +65,14 @@ export default function App() {
         return fetch(`http://localhost:3001/scripts/${script}/newrun`, {method: "POST"})
     }
 
+    async function apiUpdateConfig(data) {
+        return fetch(`http://localhost:3001/scripts/${selectedScript}/config`, {
+            method: "PUT",
+            body: JSON.stringify(data),
+            headers: [["Content-Type", "application/json"]]
+        })
+    }
+
     function executeRun(script) {
         setRunButtonDisabled(true)
         setSelectedRunContent(null)
@@ -105,6 +116,17 @@ export default function App() {
         }
     }
 
+    function changeEmail(value) {
+        setEmailValue(value)
+        console.log(value)
+    }
+
+    async function setEmailActiveAndUpdate() {
+        let newValue = !emailActive;
+        setEmailActive(newValue)
+        await apiUpdateConfig({emailActive: newValue})
+    }
+
     return (
         <div className='main-container'>
 
@@ -125,12 +147,19 @@ export default function App() {
 
             {/* === Main content === */}
             <div style={{background: '#ddd', padding: '.5rem', flex: '1'}}>
-                <div style={{background: '#ccc', padding: '.5rem', display: "flex"}}>
+                <div style={{background: '#ccc', padding: '.5rem', display: "flex", marginBottom: '.5rem'}}>
                     <div style={{flex: '1'}}></div>
                     <div style={{background: '#bbb', padding: '.5rem'}}>
                         <div style={{display: 'flex', marginBottom: '.5rem'}}>
                             <span style={{marginRight: '6px', flex: '1'}}>Send to mail on error:</span>
-                            <input style={{flex: '1', padding: "3px", width: '190px'}} type='email'/>
+                            <div style={{display: 'flex'}}>
+                                <input style={{flex: '1', padding: "3px", width: '160px'}} type='email'
+                                       value={emailValue}
+                                       onChange={e => changeEmail(e.target.value)}/>
+                                <input type="checkbox" style={{width: '17px'}}
+                                       onChange={() => setEmailActiveAndUpdate()}
+                                       checked={emailActive}/>
+                            </div>
                         </div>
                         <div style={{display: 'flex', marginBottom: '.25rem'}}>
                             <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
@@ -138,7 +167,8 @@ export default function App() {
                                 <input style={{padding: "3px", width: '160px'}} placeholder='0 0 * ? * *'
                                        onChange={(e) => changeCron(e.target.value)}
                                        value={cronValue} type='text'/>
-                                <input type="checkbox" onChange={() => setCronActive(!cronActive)}
+                                <input type="checkbox" style={{width: '17px'}}
+                                       onChange={() => setCronActive(!cronActive)}
                                        checked={cronActive}/>
                             </div>
                         </div>
@@ -159,7 +189,7 @@ export default function App() {
                         </div>}
                     {selectedRunContent &&
                         <React.Fragment>
-                            <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.25rem'}}>
+                            <div style={{background: '#bbb', padding: '.5rem', flex: '1', marginRight: '.5rem'}}>
                                 <div className='mb-2'>
                                     Result: <span
                                     style={{color: selectedRunContent.results.success ? "green" : "darkred"}}>
