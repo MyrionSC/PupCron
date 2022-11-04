@@ -8,8 +8,8 @@ function runScript(cwd, script, callback) {
     const process = childProcess.fork(script, {cwd: cwd, silent: true});
     const stream = fs.createWriteStream(cwd + "/logs.txt", {flags: 'a', encoding: 'utf8'});
     const decoder = new StringDecoder('utf8');
-    const runStart = new Date().toISOString();
-    stream.write(`=== Run started at: ${runStart}\n\n`)
+    const runStart = new Date();
+    stream.write(`=== Run started at: ${runStart.toISOString()}\n\n`)
 
     process.stdout.on('data', (data) => {
         stream.write(data)
@@ -26,10 +26,15 @@ function runScript(cwd, script, callback) {
     });
 
     function finishRun(code) {
-        const runEnd = new Date().toISOString();
-        stream.write(`\n=== Run finished at: ${runEnd}\n`)
+        const runEnd = new Date();
+        stream.write(`\n=== Run finished at: ${runEnd.toISOString()}\nRun duration: ${runEnd - runStart} ms\n`)
         const resultStream = fs.createWriteStream(cwd + "/results.json", {flags: 'a', encoding: 'utf8'});
-        resultStream.write(JSON.stringify({success: code === 0, start: runStart, end: runEnd}))
+        resultStream.write(JSON.stringify({
+            success: code === 0,
+            start: runStart.toISOString(),
+            end: runEnd.toISOString(),
+            runDurationMs: runEnd - runStart
+        }))
         resultStream.close()
         stream.close()
         callback(code);
