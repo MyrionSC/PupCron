@@ -25,6 +25,7 @@ export function postExecuteRun(script) {
 }
 
 export async function putUpdateConfig(script, data) {
+    console.log("Updating config: ", data)
     return fetch(`http://localhost:3001/scripts/${script}/config`, {
         method: "PUT",
         body: JSON.stringify(data),

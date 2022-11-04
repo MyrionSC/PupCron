@@ -6,6 +6,7 @@ import {
     postExecuteRun, putUpdateConfig, fetchConfigForScript, fetchScriptsUploadedList,
     fetchSelectedRun, fetchSelectedScriptRunList, postUploadScript
 } from "./api";
+import {validateEmail} from "./webhelper";
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
@@ -16,6 +17,7 @@ export default function App() {
     const [runButtonDisabled, setRunButtonDisabled] = useState(false)
 
     const [emailValue, setEmailValue] = useState("")
+    const [emailError, setEmailError] = useState("")
     const [emailActive, setEmailActive] = useState(false)
 
     const [cronValue, setCronValue] = useState("")
@@ -46,8 +48,10 @@ export default function App() {
                 .then((configRes) => {
                     console.log(configRes)
                     changeCron(configRes.data.cronValue)
+                    setCronActive(configRes.data.cronActive)
+                    setEmailValue(configRes.data.emailValue)
+                    setEmailActive(configRes.data.emailActive)
                 })
-
         }
     }, [selectedScript])
 
@@ -93,11 +97,10 @@ export default function App() {
         input.value = null
     }
 
-    function changeCronAndUpdateRemote(value) {
+    async function changeCronValueAndUpdateRemote(value) {
         const valid = changeCron(value)
         if (valid) {
-            // TODO
-            console.log("update remote")
+            await putUpdateConfig(selectedScript, {cronValue: value})
         }
     }
 
@@ -114,15 +117,32 @@ export default function App() {
         }
     }
 
-    function changeEmail(value) {
+    async function changeEmailAndUpdateRemote(value) {
         setEmailValue(value)
-        console.log(value)
+        if (validateEmail(value)) {
+            setEmailError("")
+            await putUpdateConfig(selectedScript, {emailValue: value})
+        } else {
+            setEmailError(`Email ${value} is not valid`)
+        }
     }
 
-    async function setEmailActiveAndUpdate() {
+    async function setEmailActiveAndUpdateRemote() {
         let newValue = !emailActive;
-        setEmailActive(newValue)
-        await putUpdateConfig(selectedScript, {emailActive: newValue})
+        if (validateEmail(emailValue)) {
+            setEmailActive(newValue)
+            await putUpdateConfig(selectedScript, {emailActive: newValue})
+        } else {
+            setEmailError(`Email ${emailValue} is not valid`)
+        }
+    }
+
+    async function setCronActiveAndUpdateRemote(activeValue) {
+        const cronValid = changeCron(cronValue)
+        if (cronValid) {
+            setCronActive(activeValue)
+            await putUpdateConfig(selectedScript, {cronActive: activeValue})
+        }
     }
 
     return (
@@ -153,25 +173,34 @@ export default function App() {
                             <div style={{display: 'flex'}}>
                                 <input style={{flex: '1', padding: "3px", width: '160px'}} type='email'
                                        value={emailValue}
-                                       onChange={e => changeEmail(e.target.value)}/>
+                                       onChange={e => changeEmailAndUpdateRemote(e.target.value)}/>
                                 <input type="checkbox" style={{width: '17px'}}
-                                       onChange={() => setEmailActiveAndUpdate()}
+                                       onChange={() => setEmailActiveAndUpdateRemote()}
                                        checked={emailActive}/>
                             </div>
                         </div>
+                        {emailError && <div style={{
+                            color: '#af0000',
+                            marginBottom: '.5rem',
+                            textAlign: 'end',
+                            fontSize: '12px'
+                        }}>{emailError}</div>}
+
                         <div style={{display: 'flex', marginBottom: '.25rem'}}>
                             <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
                             <div style={{display: 'flex'}}>
                                 <input style={{padding: "3px", width: '160px'}} placeholder='0 0 * ? * *'
-                                       onChange={(e) => changeCronAndUpdateRemote(e.target.value)}
+                                       onChange={(e) => changeCronValueAndUpdateRemote(e.target.value)}
                                        value={cronValue} type='text'/>
                                 <input type="checkbox" style={{width: '17px'}}
-                                       onChange={() => setCronActive(!cronActive)}
+                                       onChange={() => setCronActiveAndUpdateRemote(!cronActive)}
                                        checked={cronActive}/>
                             </div>
                         </div>
-                        <div style={{color: '#009900', fontSize: '13px', float: 'right'}}>{cronExplained}</div>
-                        <div style={{color: '#af0000', fontSize: '12px', float: 'right'}}>{cronError}</div>
+                        {cronExplained &&
+                            <div style={{color: '#009900', fontSize: '13px', textAlign: 'end'}}>{cronExplained}</div>}
+                        {cronError &&
+                            <div style={{color: '#af0000', fontSize: '12px', textAlign: 'end'}}>{cronError}</div>}
                     </div>
                 </div>
 
