@@ -103,6 +103,20 @@ app.get('/scripts/:script/runs/:run', async (req, res) => {
     return resWithStatusMessage(res, 200, null, data)
 })
 
+app.get('/scripts/:script/config', async (req, res, next) => {
+    const scriptDir = req.params.script
+    let configFileName = `config.json`;
+
+    let config = {cronValue: "0 0 0 * * *", cronActive: false, emailValue: "", emailActive: false}
+    if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
+        const configBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
+        config = JSON.parse(configBytes.toString())
+    }
+
+    return resWithStatusMessage(res, 200, null, config)
+})
+
+
 app.post('/scripts/:script/newrun', async (req, res, next) => {
     if (!req.params.script)
         return resWithStatusMessage(res, 400, "required param prop 'script' should be name of script to run")

@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {FaPlusCircle, FaRegPlayCircle} from 'react-icons/fa';
 import LoadingSpinner from "./spinner/LoadingSpinner";
 import cronstrue from 'cronstrue';
+import {fetchScriptsUploadedList} from "./api";
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
@@ -19,10 +20,10 @@ export default function App() {
     const [cronExplained, setCronExplained] = useState("")
     const [cronError, setCronError] = useState("")
 
-    function fetchScriptsUploadedList() {
-        return fetch("http://localhost:3001/scripts_uploaded")
+
+    function fetchConfigForScript() {
+        return fetch(`http://localhost:3001/scripts/${selectedScript}/config`)
             .then(res => res.json())
-            .then(res => res.data.sort().reverse())
     }
 
     useEffect(() => {
@@ -30,7 +31,7 @@ export default function App() {
             .then(scriptList => {
                 setScriptList(scriptList)
                 setSelectedScript(scriptList[0])
-            });
+            })
     }, [])
 
     function fetchSelectedScriptRunList(script) {
@@ -48,7 +49,13 @@ export default function App() {
     useEffect(() => {
         if (selectedScript) {
             fetchSelectedScriptRunList(selectedScript)
-                .then(setSelectedRunList);
+                .then(setSelectedRunList)
+                .then(fetchConfigForScript)
+                .then((configRes) => {
+                    console.log(configRes)
+                    changeCron(configRes.data.cronValue)
+                })
+
         }
     }, [selectedScript])
 
@@ -105,14 +112,24 @@ export default function App() {
         input.value = null
     }
 
+    function changeCronAndUpdateRemote(value) {
+        const valid = changeCron(value)
+        if (valid) {
+            // TODO
+            console.log("update remote")
+        }
+    }
+
     function changeCron(value) {
         setCronValue(value)
         setCronExplained("")
         setCronError("")
         try {
             setCronExplained(cronstrue.toString(value))
+            return true
         } catch (e) {
             setCronError(e)
+            return false
         }
     }
 
@@ -165,7 +182,7 @@ export default function App() {
                             <span style={{marginRight: '6px', flex: '1'}}>Schedule (cron):</span>
                             <div style={{display: 'flex'}}>
                                 <input style={{padding: "3px", width: '160px'}} placeholder='0 0 * ? * *'
-                                       onChange={(e) => changeCron(e.target.value)}
+                                       onChange={(e) => changeCronAndUpdateRemote(e.target.value)}
                                        value={cronValue} type='text'/>
                                 <input type="checkbox" style={{width: '17px'}}
                                        onChange={() => setCronActive(!cronActive)}
