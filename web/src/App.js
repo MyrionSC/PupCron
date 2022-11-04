@@ -2,7 +2,10 @@ import React, {useEffect, useState} from "react";
 import {FaPlusCircle, FaRegPlayCircle} from 'react-icons/fa';
 import LoadingSpinner from "./spinner/LoadingSpinner";
 import cronstrue from 'cronstrue';
-import {fetchScriptsUploadedList} from "./api";
+import {
+    postExecuteRun, putUpdateConfig, fetchConfigForScript, fetchScriptsUploadedList,
+    fetchSelectedRun, fetchSelectedScriptRunList, postUploadScript
+} from "./api";
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
@@ -20,12 +23,6 @@ export default function App() {
     const [cronExplained, setCronExplained] = useState("")
     const [cronError, setCronError] = useState("")
 
-
-    function fetchConfigForScript() {
-        return fetch(`http://localhost:3001/scripts/${selectedScript}/config`)
-            .then(res => res.json())
-    }
-
     useEffect(() => {
         fetchScriptsUploadedList()
             .then(scriptList => {
@@ -34,11 +31,6 @@ export default function App() {
             })
     }, [])
 
-    function fetchSelectedScriptRunList(script) {
-        return fetch(`http://localhost:3001/script_runs?script=${script}`)
-            .then(res => res.json())
-            .then(res => res.data.sort().reverse());
-    }
 
     function setSelectedRunList(runList) {
         setRunList(runList)
@@ -50,7 +42,7 @@ export default function App() {
         if (selectedScript) {
             fetchSelectedScriptRunList(selectedScript)
                 .then(setSelectedRunList)
-                .then(fetchConfigForScript)
+                .then(() => fetchConfigForScript(selectedScript))
                 .then((configRes) => {
                     console.log(configRes)
                     changeCron(configRes.data.cronValue)
@@ -61,33 +53,22 @@ export default function App() {
 
     useEffect(() => {
         if (selectedRun) {
-            fetch(`http://localhost:3001/scripts/${selectedScript}/runs/${selectedRun}`)
-                .then(res => res.json())
+            fetchSelectedRun(selectedScript, selectedRun)
                 .then(res => setSelectedRunContent(res.data));
         }
         // eslint-disable-next-line
     }, [selectedRun])
 
-    function apiExecuteRun(script) {
-        return fetch(`http://localhost:3001/scripts/${script}/newrun`, {method: "POST"})
-    }
-
-    async function apiUpdateConfig(data) {
-        return fetch(`http://localhost:3001/scripts/${selectedScript}/config`, {
-            method: "PUT",
-            body: JSON.stringify(data),
-            headers: [["Content-Type", "application/json"]]
-        })
-    }
 
     function executeRun(script) {
         setRunButtonDisabled(true)
         setSelectedRunContent(null)
-        return apiExecuteRun(script)
+        return postExecuteRun(script)
             .then(() => fetchSelectedScriptRunList(script))
             .then(setSelectedRunList)
             .then(() => setRunButtonDisabled(false))
     }
+
 
     async function uploadNewScript() {
         const input = document.querySelector('input[type="file"]')
@@ -100,10 +81,10 @@ export default function App() {
         setSelectedRunContent(null)
         setRunList([])
 
-        await fetch(`http://localhost:3001/uploadscript`, {method: "POST", body: data})
+        await postUploadScript(data)
         const scriptsUploadedList = await fetchScriptsUploadedList()
 
-        await apiExecuteRun(scriptsUploadedList[0])
+        await executeRun(scriptsUploadedList[0])
 
         const scriptsUploadedAfterRunList = await fetchScriptsUploadedList()
         setScriptList(scriptsUploadedAfterRunList)
@@ -141,7 +122,7 @@ export default function App() {
     async function setEmailActiveAndUpdate() {
         let newValue = !emailActive;
         setEmailActive(newValue)
-        await apiUpdateConfig({emailActive: newValue})
+        await putUpdateConfig(selectedScript, {emailActive: newValue})
     }
 
     return (
