@@ -71,8 +71,30 @@ function resWithStatusMessage(res, status, msg = null, data = null) {
     return res.json(resObj)
 }
 
+async function exists(fileOrDir) {
+    if (!fileOrDir) throw Error("exists: fileOrDir parameter must be set")
+    try {
+        await fs.promises.access(fileOrDir);
+        return true
+    } catch (e) {
+        return false
+    }
+}
+
+async function loadConfigFile(scriptDir) {
+    let configFileName = `config.json`;
+    let config = {cronValue: "0 0 0 * * *", cronActive: false, emailValue: "", emailActive: false}
+    if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
+        const configBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
+        config = JSON.parse(configBytes.toString())
+    }
+    return config;
+}
+
 module.exports = {
     runScript: runScript,
     toDirCompat: toDirCompat,
-    resWithStatusMessage: resWithStatusMessage
+    resWithStatusMessage: resWithStatusMessage,
+    exists: exists,
+    loadConfigFile: loadConfigFile
 }

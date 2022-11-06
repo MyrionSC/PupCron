@@ -4,7 +4,7 @@ const fileUpload = require('express-fileupload');
 const cors = require('cors');
 const morgan = require('morgan');
 const _ = require('lodash');
-const {runScript, toDirCompat, resWithStatusMessage} = require("./helper");
+const {runScript, toDirCompat, resWithStatusMessage, loadConfigFile, exists} = require("./helper");
 const fs = require('fs');
 const cron = require('node-cron');
 
@@ -25,16 +25,6 @@ app.get('/scripts_uploaded', async (req, res) => {
     const scriptList = await fs.promises.readdir(`static/uploaded_scripts/`)
     return resWithStatusMessage(res, 200, null, scriptList)
 })
-
-async function exists(fileOrDir) {
-    if (!fileOrDir) throw Error("exists: fileOrDir must be set")
-    try {
-        await fs.promises.access(fileOrDir);
-        return true
-    } catch (e) {
-        return false
-    }
-}
 
 app.get('/script_runs', async (req, res) => {
     if (!req.query.script)
@@ -106,14 +96,7 @@ app.get('/scripts/:script/runs/:run', async (req, res) => {
 
 app.get('/scripts/:script/config', async (req, res, next) => {
     const scriptDir = req.params.script
-    let configFileName = `config.json`;
-
-    let config = {cronValue: "0 0 0 * * *", cronActive: false, emailValue: "", emailActive: false}
-    if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
-        const configBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
-        config = JSON.parse(configBytes.toString())
-    }
-
+    let config = await loadConfigFile(scriptDir);
     return resWithStatusMessage(res, 200, null, config)
 })
 
@@ -150,16 +133,21 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
     });
 })
 
+// Returns task object with metadata
+function startCron(cronValue, scriptDir) {
+    return cron.schedule(cronValue, async () => {
+        console.log("=== Scheduled run start")
+        await executeNewRun(scriptDir, code => {
+            console.log(`=== Scheduled run end with ${code === 0 ? 'Success' : 'Error'}`)
+        });
+    });
+}
+
 function StartOrStopCron(key, req, config, scriptDir) {
     if ((key === "cronActive" && req.body["cronActive"] === true) || (key === "cronValue" && config["cronActive"])) {
         const cronValue = key === "cronValue" ? req.body[key] : config["cronValue"]
         if (!cron.validate(cronValue)) throw Error(`cron value ${cronValue} is not valid`)
-        const task = cron.schedule(cronValue, async () => {
-            console.log("=== Scheduled run start")
-            await executeNewRun(scriptDir, code => {
-                console.log(`=== Scheduled run end with ${code === 0 ? 'Success' : 'Error'}`)
-            });
-        });
+        const task = startCron(cronValue, scriptDir);
         config.cronTaskId = task.options.name
         console.log(`Started cron for script ${scriptDir} (cronValue: ${cronValue})`)
     } else {
@@ -175,13 +163,7 @@ function StartOrStopCron(key, req, config, scriptDir) {
 app.put('/scripts/:script/config', async (req, res, next) => {
     if (!req.body) return resWithStatusMessage(res, 400, "body required")
     const scriptDir = req.params.script
-    let configFileName = `config.json`;
-
-    let config = {}
-    if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
-        const configBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
-        config = JSON.parse(configBytes.toString())
-    }
+    let config = await loadConfigFile(scriptDir);
 
     Object.keys(req.body).forEach(key => {
         console.log(`Updating config ${key} from ${config[key]} to ${req.body[key]}`)
@@ -192,11 +174,7 @@ app.put('/scripts/:script/config', async (req, res, next) => {
 
         config[key] = req.body[key]
     })
-
-    const stream = fs.createWriteStream(`static/uploaded_scripts/${scriptDir}/${configFileName}`
-        , {flags: 'w', encoding: 'utf8'});
-    stream.write(JSON.stringify(config))
-    stream.close()
+    await fs.promises.writeFile(`static/uploaded_scripts/${scriptDir}/config.json`, JSON.stringify(config), "utf8")
 
     return resWithStatusMessage(res, 200)
 })
@@ -219,11 +197,26 @@ app.post('/uploadscript', async (req, res) => {
 
         const scriptPath = `./static/uploaded_scripts/${timeISO}_${toDirCompat(uploadedFile.name)}/pup_script_original.js`;
         await uploadedFile.mv(scriptPath);
-        await fs.promises.writeFile(`./static/uploaded_scripts/${timeISO}_${toDirCompat(uploadedFile.name)}/pup_script_modified.js`, fileTextModified, "utf8")
+        await fs.promises.writeFile(`static/uploaded_scripts/${timeISO}_${toDirCompat(uploadedFile.name)}/pup_script_modified.js`, fileTextModified, "utf8")
 
         resWithStatusMessage(res, 200, "Script uploaded with success")
     }
 })
+
+// === Cron startup
+setTimeout(async () => {
+    console.log("=== Cron startup: Looking for active cron jobs to start...")
+    const scriptsList = await fs.promises.readdir(`static/uploaded_scripts/`)
+    for (let script of scriptsList) {
+        const config = await loadConfigFile(script)
+        if (config.cronActive && config.cronValue) {
+            console.log(`registered cron for script ${script}:`, config)
+            const task = startCron(config.cronValue, script);
+            config.cronTaskId = task.options.name
+            await fs.promises.writeFile(`static/uploaded_scripts/${script}/config.json`, JSON.stringify(config), "utf8")
+        }
+    }
+}, 500)
 
 // === Error handling (must be after routes)
 app.use((err, req, res, next) => {
