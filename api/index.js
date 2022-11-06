@@ -143,10 +143,23 @@ function startCron(cronValue, scriptDir) {
     });
 }
 
+function tryStopOldTask(config) {
+    try {
+        const taskList = cron.getTasks()
+        const oldTask = taskList.get(config.cronTaskId)
+        oldTask.stop()
+        console.log("Stopped old task successfully")
+    } catch (e) {
+        console.error(`Tried to stop old task with id ${config.cronTaskId} but it failed with error ${e}`)
+    }
+}
+
 function StartOrStopCron(key, req, config, scriptDir) {
     if ((key === "cronActive" && req.body["cronActive"] === true) || (key === "cronValue" && config["cronActive"])) {
         const cronValue = key === "cronValue" ? req.body[key] : config["cronValue"]
         if (!cron.validate(cronValue)) throw Error(`cron value ${cronValue} is not valid`)
+        if (config.cronTaskId) tryStopOldTask(config);
+
         const task = startCron(cronValue, scriptDir);
         config.cronTaskId = task.options.name
         console.log(`Started cron for script ${scriptDir} (cronValue: ${cronValue})`)
