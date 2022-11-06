@@ -6,6 +6,7 @@ const morgan = require('morgan');
 const _ = require('lodash');
 const {runScript, toDirCompat, resWithStatusMessage} = require("./helper");
 const fs = require('fs');
+const cron = require('node-cron');
 
 const app = express();
 
@@ -117,16 +118,8 @@ app.get('/scripts/:script/config', async (req, res, next) => {
 })
 
 
-app.post('/scripts/:script/newrun', async (req, res, next) => {
-    if (!req.params.script)
-        return resWithStatusMessage(res, 400, "required param prop 'script' should be name of script to run")
-    const scriptDir = req.params.script
+async function executeNewRun(scriptDir, callback) {
     let scriptName = `pup_script_modified.js`;
-
-    if (!(await exists(`static/uploaded_scripts/${scriptDir}`)))
-        return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
-
-    // === create new run dir and copy script to it
     const timeISO = new Date().toISOString()
         .replaceAll('T', '_')
         .replaceAll(':', '-')
@@ -139,9 +132,45 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
     // === Run script
     runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, async code => {
         console.log(`finished run with code ${code}`);
+        callback(code)
+    });
+}
+
+app.post('/scripts/:script/newrun', async (req, res, next) => {
+    if (!req.params.script)
+        return resWithStatusMessage(res, 400, "required param prop 'script' should be name of script to run")
+    const scriptDir = req.params.script
+
+    if (!(await exists(`static/uploaded_scripts/${scriptDir}`)))
+        return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
+
+    // === create new run dir and copy script to it
+    await executeNewRun(scriptDir, code => {
         resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error')
     });
 })
+
+function StartOrStopCron(key, req, config, scriptDir) {
+    if ((key === "cronActive" && req.body["cronActive"] === true) || (key === "cronValue" && config["cronActive"])) {
+        const cronValue = key === "cronValue" ? req.body[key] : config["cronValue"]
+        if (!cron.validate(cronValue)) throw Error(`cron value ${cronValue} is not valid`)
+        const task = cron.schedule(cronValue, async () => {
+            console.log("=== Scheduled run start")
+            await executeNewRun(scriptDir, code => {
+                console.log(`=== Scheduled run end with ${code === 0 ? 'Success' : 'Error'}`)
+            });
+        });
+        config.cronTaskId = task.options.name
+        console.log(`Started cron for script ${scriptDir} (cronValue: ${cronValue})`)
+    } else {
+        const taskList = cron.getTasks()
+        if (config.cronTaskId && taskList.get(config.cronTaskId)) {
+            taskList.get(config.cronTaskId).stop()
+            console.log(`Stopped cron for script ${scriptDir}`)
+            config.cronTaskId = ""
+        }
+    }
+}
 
 app.put('/scripts/:script/config', async (req, res, next) => {
     if (!req.body) return resWithStatusMessage(res, 400, "body required")
@@ -155,8 +184,12 @@ app.put('/scripts/:script/config', async (req, res, next) => {
     }
 
     Object.keys(req.body).forEach(key => {
-        console.log(key)
-        console.log(req.body[key])
+        console.log(`Updating config ${key} from ${config[key]} to ${req.body[key]}`)
+
+        if (key === "cronActive" || key === "cronValue") {
+            StartOrStopCron(key, req, config, scriptDir);
+        }
+
         config[key] = req.body[key]
     })
 
@@ -165,7 +198,6 @@ app.put('/scripts/:script/config', async (req, res, next) => {
     stream.write(JSON.stringify(config))
     stream.close()
 
-    // TODO: update cron if set
     return resWithStatusMessage(res, 200)
 })
 
