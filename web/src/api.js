@@ -1,32 +1,29 @@
+const baseUrl = "http://localhost:3001";
+
 export function fetchScriptsUploadedList() {
-    return fetch("http://localhost:3001/scripts_uploaded")
+    return fetch(`${baseUrl}/scripts_uploaded`)
         .then(res => res.json())
         .then(res => res.data.sort().reverse())
 }
 
-export function fetchConfigForScript(script) {
-    return fetch(`http://localhost:3001/scripts/${script}/config`)
-        .then(res => res.json())
-}
-
 export function fetchSelectedScriptRunList(script) {
-    return fetch(`http://localhost:3001/script_runs?script=${script}`)
+    return fetch(`${baseUrl}/script_runs?script=${script}`)
         .then(res => res.json())
         .then(res => res.data.sort().reverse());
 }
 
 export function fetchSelectedRun(script, run) {
-    return fetch(`http://localhost:3001/scripts/${script}/runs/${run}`)
+    return fetch(`${baseUrl}/scripts/${script}/runs/${run}`)
         .then(res => res.json())
 }
 
 export function postExecuteRun(script) {
-    return fetch(`http://localhost:3001/scripts/${script}/newrun`, {method: "POST"})
+    return fetch(`${baseUrl}/scripts/${script}/newrun`, {method: "POST"})
 }
 
 export async function putUpdateConfig(script, data) {
     console.log("Updating config: ", data)
-    return fetch(`http://localhost:3001/scripts/${script}/config`, {
+    return fetch(`${baseUrl}/scripts/${script}/config`, {
         method: "PUT",
         body: JSON.stringify(data),
         headers: [["Content-Type", "application/json"]]
@@ -34,5 +31,5 @@ export async function putUpdateConfig(script, data) {
 }
 
 export async function postUploadScript(data) {
-    return fetch(`http://localhost:3001/uploadscript`, {method: "POST", body: data})
+    return fetch(`${baseUrl}/uploadscript`, {method: "POST", body: data})
 }

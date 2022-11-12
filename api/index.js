@@ -23,7 +23,11 @@ app.use(express.json())
 // routes
 app.get('/scripts_uploaded', async (req, res) => {
     const scriptList = await fs.promises.readdir(`static/uploaded_scripts/`)
-    return resWithStatusMessage(res, 200, null, scriptList)
+    console.log(scriptList)
+    const scriptWithConfigList = await Promise.all(scriptList.map(script => loadConfigFile(script)))
+    console.log(scriptWithConfigList)
+    return resWithStatusMessage(res, 200, null,
+        scriptWithConfigList.sort((a, b) => a.name.localeCompare(b.name)))
 })
 
 app.get('/script_runs', async (req, res) => {
@@ -40,6 +44,17 @@ app.get('/script_runs', async (req, res) => {
     return resWithStatusMessage(res, 200, null, runList)
 })
 
+// TODO remove trycatch
+async function getRunResults(scriptDir, runName) {
+    try {
+        const resultBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/results.json`)
+        return JSON.parse(resultBytes.toString())
+    } catch (e) {
+        console.error(e)
+        return {success: true}
+    }
+}
+
 async function getScriptRunContent(scriptDir, runName) {
     const runContent = await fs.promises.readdir(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)
 
@@ -55,16 +70,7 @@ async function getScriptRunContent(scriptDir, runName) {
 
     const logsBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/logs.txt`)
     const scriptBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/pup_script_modified.js`)
-
-    // TODO: remove later
-    let tempRes = null
-    try {
-        const resultBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/results.json`)
-        tempRes = JSON.parse(resultBytes.toString())
-    } catch (e) {
-        console.error(e)
-        tempRes = {success: true}
-    }
+    const runResults = await getRunResults(scriptDir, runName);
 
     return {
         logs: {
@@ -75,7 +81,7 @@ async function getScriptRunContent(scriptDir, runName) {
             name: "pup_script_modified.js",
             text: scriptBytes.toString("utf8")
         },
-        results: tempRes,
+        results: runResults,
         pageList: pageListResolved
     };
 }

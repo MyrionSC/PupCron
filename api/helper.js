@@ -83,10 +83,10 @@ async function exists(fileOrDir) {
 
 async function loadConfigFile(scriptDir) {
     let configFileName = `config.json`;
-    let config = {cronValue: "0 0 0 * * *", cronActive: false, emailValue: "", emailActive: false}
+    let config = {name: scriptDir, cronValue: "0 0 0 * * *", cronActive: false, emailValue: "", emailActive: false}
     if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
         const configBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
-        config = JSON.parse(configBytes.toString())
+        config = {...config, ...JSON.parse(configBytes.toString())}
     }
     return config;
 }

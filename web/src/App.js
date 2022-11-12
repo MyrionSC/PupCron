@@ -3,15 +3,19 @@ import {FaPlusCircle, FaRegPlayCircle} from 'react-icons/fa';
 import LoadingSpinner from "./spinner/LoadingSpinner";
 import cronstrue from 'cronstrue';
 import {
-    postExecuteRun, putUpdateConfig, fetchConfigForScript, fetchScriptsUploadedList,
-    fetchSelectedRun, fetchSelectedScriptRunList, postUploadScript
+    fetchScriptsUploadedList,
+    fetchSelectedRun,
+    fetchSelectedScriptRunList,
+    postExecuteRun,
+    postUploadScript,
+    putUpdateConfig
 } from "./api";
 import {validateEmail} from "./webhelper";
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
+    const [selectedScript, setSelectedScript] = useState({name:""})
     const [runList, setRunList] = useState([])
-    const [selectedScript, setSelectedScript] = useState("")
     const [selectedRun, setSelectedRun] = useState("")
     const [selectedRunContent, setSelectedRunContent] = useState(null)
     const [runButtonDisabled, setRunButtonDisabled] = useState(false)
@@ -41,34 +45,32 @@ export default function App() {
     }
 
     useEffect(() => {
-        if (selectedScript) {
-            fetchSelectedScriptRunList(selectedScript)
+        if (selectedScript.name) {
+            fetchSelectedScriptRunList(selectedScript.name)
                 .then(setSelectedRunList)
-                .then(() => fetchConfigForScript(selectedScript))
-                .then((configRes) => {
-                    console.log(configRes)
-                    changeCron(configRes.data.cronValue)
-                    setCronActive(configRes.data.cronActive)
-                    setEmailValue(configRes.data.emailValue)
-                    setEmailActive(configRes.data.emailActive)
+                .then(() => {
+                    console.log(selectedScript)
+                    changeCron(selectedScript.cronValue)
+                    setCronActive(selectedScript.cronActive)
+                    setEmailValue(selectedScript.emailValue)
+                    setEmailActive(selectedScript.emailActive)
                 })
         }
     }, [selectedScript])
 
     useEffect(() => {
         if (selectedRun) {
-            fetchSelectedRun(selectedScript, selectedRun)
+            fetchSelectedRun(selectedScript.name, selectedRun)
                 .then(res => setSelectedRunContent(res.data));
         }
-        // eslint-disable-next-line
     }, [selectedRun])
 
 
     function executeRun(script) {
         setRunButtonDisabled(true)
         setSelectedRunContent(null)
-        return postExecuteRun(script)
-            .then(() => fetchSelectedScriptRunList(script))
+        return postExecuteRun(script.name)
+            .then(() => fetchSelectedScriptRunList(script.name))
             .then(setSelectedRunList)
             .then(() => setRunButtonDisabled(false))
     }
@@ -80,7 +82,7 @@ export default function App() {
         const data = new FormData()
         data.append('file', input.files[0])
 
-        setSelectedScript("")
+        setSelectedScript({name:""})
         setSelectedRun("")
         setSelectedRunContent(null)
         setRunList([])
@@ -100,7 +102,7 @@ export default function App() {
     async function changeCronValueAndUpdateRemote(value) {
         const valid = changeCron(value)
         if (valid) {
-            await putUpdateConfig(selectedScript, {cronValue: value})
+            await putUpdateConfig(selectedScript.name, {cronValue: value})
         }
     }
 
@@ -121,7 +123,7 @@ export default function App() {
         setEmailValue(value)
         if (validateEmail(value)) {
             setEmailError("")
-            await putUpdateConfig(selectedScript, {emailValue: value})
+            await putUpdateConfig(selectedScript.name, {emailValue: value})
         } else {
             setEmailError(`Email ${value} is not valid`)
         }
@@ -131,7 +133,7 @@ export default function App() {
         let newValue = !emailActive;
         if (validateEmail(emailValue)) {
             setEmailActive(newValue)
-            await putUpdateConfig(selectedScript, {emailActive: newValue})
+            await putUpdateConfig(selectedScript.name, {emailActive: newValue})
         } else {
             setEmailError(`Email ${emailValue} is not valid`)
         }
@@ -141,7 +143,7 @@ export default function App() {
         const cronValid = changeCron(cronValue)
         if (cronValid) {
             setCronActive(activeValue)
-            await putUpdateConfig(selectedScript, {cronActive: activeValue})
+            await putUpdateConfig(selectedScript.name, {cronActive: activeValue})
         }
     }
 
@@ -156,10 +158,10 @@ export default function App() {
                     <span>Upload script</span>
                     <input style={{display: 'none'}} type='file' onChange={uploadNewScript}/>
                 </label>
-                {scriptList.map(item => <div key={item} onClick={() => setSelectedScript(item)}
-                                             className={(item === selectedScript ? 'active' : '') + ' cursor-pointer'}
+                {scriptList.map(script => <div key={script.name} onClick={() => setSelectedScript(script)}
+                                             className={(script.name === selectedScript.name ? 'active' : '') + ' cursor-pointer'}
                                              style={{padding: '0.5rem', border: '1px #aaa solid'}}>
-                    {item}
+                    {script.name}
                 </div>)}
             </div>
 
