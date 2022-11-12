@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {FaPlusCircle, FaRegPlayCircle} from 'react-icons/fa';
+import {FaPlusCircle, FaRegClock, FaRegEnvelope, FaRegPlayCircle} from 'react-icons/fa';
 import LoadingSpinner from "./spinner/LoadingSpinner";
 import cronstrue from 'cronstrue';
 import {
@@ -11,10 +11,11 @@ import {
     putUpdateConfig
 } from "./api";
 import {validateEmail} from "./webhelper";
+import {cloneDeep} from "lodash";
 
 export default function App() {
     const [scriptList, setScriptList] = useState([])
-    const [selectedScript, setSelectedScript] = useState({name:""})
+    const [selectedScript, setSelectedScript] = useState({name: ""})
     const [runList, setRunList] = useState([])
     const [selectedRun, setSelectedRun] = useState("")
     const [selectedRunContent, setSelectedRunContent] = useState(null)
@@ -63,6 +64,7 @@ export default function App() {
             fetchSelectedRun(selectedScript.name, selectedRun)
                 .then(res => setSelectedRunContent(res.data));
         }
+        // eslint-disable-next-line
     }, [selectedRun])
 
 
@@ -82,7 +84,7 @@ export default function App() {
         const data = new FormData()
         data.append('file', input.files[0])
 
-        setSelectedScript({name:""})
+        setSelectedScript({name: ""})
         setSelectedRun("")
         setSelectedRunContent(null)
         setRunList([])
@@ -124,6 +126,7 @@ export default function App() {
         if (validateEmail(value)) {
             setEmailError("")
             await putUpdateConfig(selectedScript.name, {emailValue: value})
+
         } else {
             setEmailError(`Email ${value} is not valid`)
         }
@@ -134,6 +137,11 @@ export default function App() {
         if (validateEmail(emailValue)) {
             setEmailActive(newValue)
             await putUpdateConfig(selectedScript.name, {emailActive: newValue})
+
+            // Update in list
+            const scriptListClone = cloneDeep(scriptList)
+            scriptListClone.find(s => s.name === selectedScript.name).emailActive = newValue
+            setScriptList(scriptListClone)
         } else {
             setEmailError(`Email ${emailValue} is not valid`)
         }
@@ -144,6 +152,11 @@ export default function App() {
         if (cronValid) {
             setCronActive(activeValue)
             await putUpdateConfig(selectedScript.name, {cronActive: activeValue})
+
+            // Update in list
+            const scriptListClone = cloneDeep(scriptList)
+            scriptListClone.find(s => s.name === selectedScript.name).cronActive = activeValue
+            setScriptList(scriptListClone)
         }
     }
 
@@ -159,9 +172,16 @@ export default function App() {
                     <input style={{display: 'none'}} type='file' onChange={uploadNewScript}/>
                 </label>
                 {scriptList.map(script => <div key={script.name} onClick={() => setSelectedScript(script)}
-                                             className={(script.name === selectedScript.name ? 'active' : '') + ' cursor-pointer'}
-                                             style={{padding: '0.5rem', border: '1px #aaa solid'}}>
-                    {script.name}
+                                               className={(script.name === selectedScript.name ? 'active' : '') + ' cursor-pointer'}
+                                               style={{
+                                                   padding: '0.25rem', border: '1px #aaa solid',
+                                                   display: 'flex', alignItems: 'center'
+                                               }}>
+                    <div style={{marginRight: '.25rem'}}>{script.name}</div>
+                    <div style={{marginLeft: 'auto'}}>
+                        <div style={{color: script.emailActive ? 'green' : 'lightgrey'}}><FaRegEnvelope/></div>
+                        <div style={{color: script.cronActive ? 'green' : 'lightgrey'}}><FaRegClock/></div>
+                    </div>
                 </div>)}
             </div>
 
