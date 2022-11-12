@@ -222,6 +222,14 @@ app.post('/uploadscript', async (req, res) => {
     }
 })
 
+// === Setup
+setTimeout(async () => {
+    if (!await exists("static/uploaded_scripts")) {
+        console.log("Creating static/uploaded_scripts")
+        await fs.promises.mkdir("static/uploaded_scripts", {recursive: true})
+    }
+}, 1)
+
 // === Cron startup
 setTimeout(async () => {
     console.log("=== Cron startup: Looking for active cron jobs to start...")

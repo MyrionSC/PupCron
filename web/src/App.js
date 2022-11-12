@@ -33,8 +33,10 @@ export default function App() {
     useEffect(() => {
         fetchScriptsUploadedList()
             .then(scriptList => {
-                setScriptList(scriptList)
-                setSelectedScript(scriptList[0])
+                if (scriptList[0]) {
+                    setScriptList(scriptList)
+                    setSelectedScript(scriptList[0])
+                }
             })
     }, [])
 
