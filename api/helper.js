@@ -85,10 +85,14 @@ async function loadConfigFile(scriptDir) {
     let configFileName = `config.json`;
     let config = {name: scriptDir, cronValue: "0 0 0 * * *", cronActive: false, emailValue: "", emailActive: false}
     if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
-        const configBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
-        config = {...config, ...JSON.parse(configBytes.toString())}
+        const existingConfig = readJsonFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
+        config = {...config, ...existingConfig}
     }
     return config;
+}
+
+async function readJsonFile(path) {
+    return JSON.parse((await fs.promises.readFile(path)).toString())
 }
 
 module.exports = {
@@ -96,5 +100,6 @@ module.exports = {
     toDirCompat: toDirCompat,
     resWithStatusMessage: resWithStatusMessage,
     exists: exists,
-    loadConfigFile: loadConfigFile
+    loadConfigFile: loadConfigFile,
+    readJsonFile: readJsonFile
 }

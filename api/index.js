@@ -4,7 +4,7 @@ const fileUpload = require('express-fileupload');
 const cors = require('cors');
 const morgan = require('morgan');
 const _ = require('lodash');
-const {runScript, toDirCompat, resWithStatusMessage, loadConfigFile, exists} = require("./helper");
+const {runScript, toDirCompat, resWithStatusMessage, loadConfigFile, exists, readJsonFile} = require("./helper");
 const fs = require('fs');
 const cron = require('node-cron');
 
@@ -44,17 +44,6 @@ app.get('/script_runs', async (req, res) => {
     return resWithStatusMessage(res, 200, null, runList)
 })
 
-// TODO remove trycatch
-async function getRunResults(scriptDir, runName) {
-    try {
-        const resultBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/results.json`)
-        return JSON.parse(resultBytes.toString())
-    } catch (e) {
-        console.error(e)
-        return {success: true}
-    }
-}
-
 async function getScriptRunContent(scriptDir, runName) {
     const runContent = await fs.promises.readdir(`static/uploaded_scripts/${scriptDir}/runs/${runName}`)
 
@@ -70,7 +59,7 @@ async function getScriptRunContent(scriptDir, runName) {
 
     const logsBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/logs.txt`)
     const scriptBytes = await fs.promises.readFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/pup_script_modified.js`)
-    const runResults = await getRunResults(scriptDir, runName);
+    const results = await readJsonFile(`static/uploaded_scripts/${scriptDir}/runs/${runName}/results.json`);
 
     return {
         logs: {
@@ -81,7 +70,7 @@ async function getScriptRunContent(scriptDir, runName) {
             name: "pup_script_modified.js",
             text: scriptBytes.toString("utf8")
         },
-        results: runResults,
+        results: results,
         pageList: pageListResolved
     };
 }
