@@ -7,6 +7,7 @@ const _ = require('lodash');
 const {runScript, toDirCompat, resWithStatusMessage, loadConfigFile, exists, readJsonFile} = require("./helper");
 const fs = require('fs');
 const cron = require('node-cron');
+const {sendMail} = require("./emailService");
 
 const app = express();
 
@@ -23,9 +24,7 @@ app.use(express.json())
 // routes
 app.get('/scripts_uploaded', async (req, res) => {
     const scriptList = await fs.promises.readdir(`static/uploaded_scripts/`)
-    console.log(scriptList)
     const scriptWithConfigList = await Promise.all(scriptList.map(script => loadConfigFile(script)))
-    console.log(scriptWithConfigList)
     return resWithStatusMessage(res, 200, null,
         scriptWithConfigList.sort((a, b) => a.name.localeCompare(b.name)))
 })
@@ -108,8 +107,8 @@ async function executeNewRun(scriptDir, callback) {
 
     // === Run script
     runScript(`static/uploaded_scripts/${scriptDir}/runs/${timeISO}`, scriptName, async code => {
-        console.log(`finished run with code ${code}`);
-        callback(code)
+        console.log(`finished run ${timeISO} for script ${scriptDir} with code ${code}`);
+        callback({code, run: timeISO})
     });
 }
 
@@ -122,19 +121,21 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
         return resWithStatusMessage(res, 404, `Script with name '${scriptDir}' does not exist`)
 
     // === create new run dir and copy script to it
-    await executeNewRun(scriptDir, code => {
-        // TODO: send mail if error
-
-        resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error')
+    await executeNewRun(scriptDir, async runResult => {
+        if (runResult.code !== 0) {
+            const config = await loadConfigFile(scriptDir);
+            if (config.emailActive && config.emailValue)
+                await sendMail(config.emailValue, `run for ${scriptDir} failed`, `Run ${runResult.run} for script ${scriptDir} failed\n\nGo to https://cronpup.marand.dk/ to see details\n`)
+        }
+        resWithStatusMessage(res, 200, runResult.code === 0 ? 'Success' : 'Error')
     });
 })
 
 // Returns task object with metadata
 function startCron(cronValue, scriptDir) {
     return cron.schedule(cronValue, async () => {
-        console.log("=== Scheduled run start")
-        await executeNewRun(scriptDir, code => {
-            console.log(`=== Scheduled run end with ${code === 0 ? 'Success' : 'Error'}`)
+        await executeNewRun(scriptDir, runResult => {
+            console.log(`=== Scheduled run ${runResult.run} for script ${scriptDir} ended with ${runResult.code === 0 ? 'Success' : 'Error'}`)
         });
     });
 }

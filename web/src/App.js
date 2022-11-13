@@ -270,6 +270,7 @@ export default function App() {
             </div>
 
             {/* === Run list === */}
+            {/*TODO: show icon with fail or success of run in list*/}
             <div className='script-list-container ms-2'>
                 <div style={{marginBottom: "0.5rem", width: "100%"}}
                      className={`button ${runButtonDisabled ? 'disabled' : ''}`}
