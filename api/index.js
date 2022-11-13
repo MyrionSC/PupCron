@@ -106,7 +106,6 @@ app.get('/scripts/:script/config', async (req, res, next) => {
     return resWithStatusMessage(res, 200, null, config)
 })
 
-
 async function executeNewRun(scriptDir, callback) {
     let scriptName = `pup_script_modified.js`;
     const timeISO = new Date().toISOString()
@@ -135,6 +134,8 @@ app.post('/scripts/:script/newrun', async (req, res, next) => {
 
     // === create new run dir and copy script to it
     await executeNewRun(scriptDir, code => {
+        // TODO: send mail if error
+
         resWithStatusMessage(res, 200, code === 0 ? 'Success' : 'Error')
     });
 })
