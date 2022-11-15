@@ -27,8 +27,6 @@ async function sendMail(mailTo, subject, text) {
     });
 }
 
-// sendMail("marpht23@gmail.com", "some subject", "body")
-
 module.exports = {
     sendMail: sendMail
 }
