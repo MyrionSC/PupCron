@@ -66,7 +66,7 @@ function resWithStatusMessage(res, status, msg = null, data = null) {
     res.status(status)
     let resObj = {success: status.toString().startsWith("2"), message: msg};
     if (data) resObj.data = data
-    if (!msg) resObj.message = resObj ? "Success" : "Failure"
+    if (!msg) resObj.message = resObj.success ? "Success" : "Failure"
     if (!resObj.success) console.error("error:", resObj);
     return res.json(resObj)
 }
@@ -85,7 +85,7 @@ async function loadConfigFile(scriptDir) {
     let configFileName = `config.json`;
     let config = {name: scriptDir, cronValue: "0 0 0 * * *", cronActive: false, emailValue: "", emailActive: false}
     if (await exists(`static/uploaded_scripts/${scriptDir}/${configFileName}`)) {
-        const existingConfig = readJsonFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
+        const existingConfig = await readJsonFile(`static/uploaded_scripts/${scriptDir}/${configFileName}`)
         config = {...config, ...existingConfig}
     }
     return config;

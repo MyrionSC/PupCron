@@ -10,6 +10,7 @@ const cron = require('node-cron');
 const {sendMail} = require("./emailService");
 
 const app = express();
+let authKey = ""
 
 // enable files upload
 app.use(fileUpload({
@@ -20,6 +21,15 @@ app.use(fileUpload({
 app.use(cors({origin: ["http://localhost:3000", "https://cronpup.marand.dk"]}));
 app.use(morgan('dev'));
 app.use(express.json())
+
+// Auth
+app.use((req, res, next) => {
+    if (req.header("Authorization") && req.header("Authorization") === authKey) {
+        return next()
+    } else {
+        return resWithStatusMessage(res, 401, "Unauthorized")
+    }
+});
 
 // routes
 app.get('/scripts_uploaded', async (req, res) => {
@@ -219,6 +229,7 @@ setTimeout(async () => {
         console.log("Creating static/uploaded_scripts")
         await fs.promises.mkdir("static/uploaded_scripts", {recursive: true})
     }
+    authKey = (await readJsonFile("apisecrets.json"))["authKey"]
 }, 1)
 
 // === Cron startup
