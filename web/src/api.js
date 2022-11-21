@@ -1,5 +1,5 @@
-const baseUrl = "http://localhost:3001";
-const authKey = "AUTH_KEY"
+const baseUrl = process.env.REACT_APP_CRONPUP_API_BASEURL ?? "http://localhost:3001";
+const authKey = process.env.REACT_APP_CRONPUP_AUTH_KEY ?? "AUTH_KEY"
 
 function sendRequest(url, method, body) {
     const options = {
